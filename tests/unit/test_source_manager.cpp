@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include <gtest/gtest.h>
+#include "support/test_framework.hpp"
 
 #include "minitool/common/source_manager.hpp"
 
