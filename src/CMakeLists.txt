@@ -1,10 +1,34 @@
+# The whole toolchain is one library; the driver in cli/ is a thin shell over
+# it, and the tests link the same library the driver does.
 add_library(minitool_core
     common/source_manager.cpp
+    common/checksum.cpp
     diagnostics/diagnostic.cpp
     diagnostics/diagnostic_engine.cpp
     isa/registers.cpp
     isa/opcode.cpp
-    isa/encoding.cpp)
+    isa/encoding.cpp
+    isa/semantics.cpp
+    lexer/lexer.cpp
+    ast/ast.cpp
+    parser/parser.cpp
+    assembler/sema.cpp
+    assembler/assembler.cpp
+    assembler/pipeline.cpp
+    ir/ir.cpp
+    ir/lower.cpp
+    optimizer/optimizer.cpp
+    object/object.cpp
+    object/object_io.cpp
+    object/relocation.cpp
+    linker/linker.cpp
+    executable/executable.cpp
+    executable/executable_io.cpp
+    vm/memory.cpp
+    vm/syscall.cpp
+    vm/vm.cpp
+    disassembler/disassembler.cpp
+    debugger/debugger.cpp)
 add_library(minitool::core ALIAS minitool_core)
 
 target_link_libraries(minitool_core PUBLIC minitool_options)

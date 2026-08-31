@@ -3,7 +3,7 @@
 // Property tests for the instruction codec. These use a fixed seed so a failure
 // is always reproducible; the seed is printed on failure.
 
-#include <gtest/gtest.h>
+#include "support/test_framework.hpp"
 #include <array>
 #include <random>
 
