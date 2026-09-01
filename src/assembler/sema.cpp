@@ -160,8 +160,7 @@ void SemanticAnalyzer::checkInstruction(const ast::InstructionNode& instruction)
                       std::format("{} expects an immediate or a symbol here, found {}",
                                   info->mnemonic, ast::operandTypeName(operands[1].type)));
             } else {
-                static_cast<void>(
-                    checkSignedRange(operands[1], isa::kImmediateBits, "immediate"));
+                static_cast<void>(checkSignedRange(operands[1], isa::kImmediateBits, "immediate"));
             }
             break;
         case isa::Format::Mem: {
@@ -213,11 +212,10 @@ void SemanticAnalyzer::checkDirective(const ast::DirectiveNode& directive) {
     const auto requireOperandCount = [&](std::size_t least, std::size_t most) {
         if (operands.size() < least || operands.size() > most) {
             error(diag::ErrorCode::InvalidDirective, directive.location,
-                  least == most
-                      ? std::format("{} takes exactly {} operand(s), {} given", name, least,
-                                    operands.size())
-                      : std::format("{} takes between {} and {} operands, {} given", name, least,
-                                    most, operands.size()));
+                  least == most ? std::format("{} takes exactly {} operand(s), {} given", name,
+                                              least, operands.size())
+                                : std::format("{} takes between {} and {} operands, {} given", name,
+                                              least, most, operands.size()));
             return false;
         }
         return true;
@@ -319,9 +317,8 @@ void SemanticAnalyzer::checkDirective(const ast::DirectiveNode& directive) {
                 error(diag::ErrorCode::InvalidDirective, operands[0].location,
                       ".space expects a non-negative size");
             }
-            if (operands.size() == 2 &&
-                (operands[1].type != OperandType::Immediate ||
-                 !fitsInWidth(operands[1].immediate, 1))) {
+            if (operands.size() == 2 && (operands[1].type != OperandType::Immediate ||
+                                         !fitsInWidth(operands[1].immediate, 1))) {
                 error(diag::ErrorCode::InvalidDirective, operands[1].location,
                       ".space fill value must be a single byte");
             }

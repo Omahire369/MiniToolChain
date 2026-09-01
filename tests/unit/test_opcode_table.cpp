@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-#include "support/test_framework.hpp"
 #include <set>
 #include <string>
+#include "support/test_framework.hpp"
 
 #include "minitool/isa/opcode.hpp"
 

@@ -3,9 +3,9 @@
 // Property tests for the instruction codec. These use a fixed seed so a failure
 // is always reproducible; the seed is printed on failure.
 
-#include "support/test_framework.hpp"
 #include <array>
 #include <random>
+#include "support/test_framework.hpp"
 
 #include "minitool/common/byte_order.hpp"
 #include "minitool/isa/encoding.hpp"

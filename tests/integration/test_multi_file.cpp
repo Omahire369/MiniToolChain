@@ -78,8 +78,7 @@ TEST(MultiFile, CrossObjectCallsLandInTheRightPlace) {
     // which only works if the PC-relative relocation used the merged address.
     const executable::Segment& text = linked.executable.segments.front();
     const u64 call_address = linked.executable.entry_point + isa::kInstructionSize;
-    const std::size_t offset =
-        static_cast<std::size_t>(call_address - text.virtual_address);
+    const std::size_t offset = static_cast<std::size_t>(call_address - text.virtual_address);
     const std::expected<isa::Instruction, isa::DecodeError> call =
         isa::decodeFrom(std::span<const u8>{text.data}.subspan(offset, isa::kInstructionSize));
     ASSERT_TRUE(call.has_value());
@@ -181,8 +180,7 @@ TEST(MultiFile, DebugInformationNamesTheRightFile) {
 
     const executable::SymbolEntry* helper = linked.executable.findSymbol("helper");
     ASSERT_NE(helper, nullptr);
-    const executable::DebugEntry* in_helper =
-        linked.executable.debugEntryFor(helper->address);
+    const executable::DebugEntry* in_helper = linked.executable.debugEntryFor(helper->address);
     ASSERT_NE(in_helper, nullptr);
     EXPECT_EQ(in_helper->file, 1U);
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
-#include "support/test_framework.hpp"
 #include <array>
+#include "support/test_framework.hpp"
 
 #include "minitool/isa/encoding.hpp"
 

@@ -67,8 +67,8 @@ TEST(Fuzz, LexerTerminatesOnAnyInput) {
         std::size_t tokens = 0;
         while (lexer.next().type != lexer::TokenType::Eof) {
             ++tokens;
-            ASSERT_LE(tokens, text.size() + 1) << "lexer failed to make progress, seed " << kSeed
-                                               << " iteration " << i;
+            ASSERT_LE(tokens, text.size() + 1)
+                << "lexer failed to make progress, seed " << kSeed << " iteration " << i;
         }
     }
 }
@@ -196,8 +196,8 @@ TEST(Fuzz, LinkerSurvivesObjectsBuiltFromFuzzedSource) {
     for (int i = 0; i < 300; ++i) {
         // Random fragments spliced into a valid skeleton reach the linker far
         // more often than pure noise does.
-        const std::string source = ".global _start\n_start:\n    " +
-                                   randomText(random, 40) + "\n    HALT\n";
+        const std::string source =
+            ".global _start\n_start:\n    " + randomText(random, 40) + "\n    HALT\n";
         const testkit::Assembled assembled = testkit::assemble(source);
         if (!assembled.ok) {
             continue;

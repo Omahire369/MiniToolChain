@@ -95,8 +95,7 @@ class VirtualMachine {
 
     /// Maps the executable's segments plus a stack and a heap, and resets the
     /// CPU to the entry point. The image is validated first.
-    [[nodiscard]] std::expected<void, std::string> load(
-        const executable::Executable& executable);
+    [[nodiscard]] std::expected<void, std::string> load(const executable::Executable& executable);
 
     /// Executes one instruction.
     [[nodiscard]] std::expected<void, VMFault> step();
@@ -127,8 +126,7 @@ class VirtualMachine {
     [[nodiscard]] u64 stackLimit() const noexcept { return stack_limit_; }
 
   private:
-    [[nodiscard]] std::expected<void, VMFault> execute(const isa::Instruction& instruction,
-                                                       u64 pc);
+    [[nodiscard]] std::expected<void, VMFault> execute(const isa::Instruction& instruction, u64 pc);
     [[nodiscard]] std::expected<void, VMFault> push(u64 value, u64 pc);
     [[nodiscard]] std::expected<u64, VMFault> pop(u64 pc);
     /// Turns a memory fault into a VM fault, classifying stack accesses.

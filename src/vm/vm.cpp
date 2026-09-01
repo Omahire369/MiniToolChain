@@ -59,8 +59,8 @@ VirtualMachine::VirtualMachine() : syscalls_(std::make_unique<DefaultSyscallProv
 VirtualMachine::~VirtualMachine() = default;
 
 void VirtualMachine::setSyscallProvider(std::unique_ptr<SyscallProvider> provider) {
-    syscalls_ = provider != nullptr ? std::move(provider)
-                                    : std::make_unique<DefaultSyscallProvider>();
+    syscalls_ =
+        provider != nullptr ? std::move(provider) : std::make_unique<DefaultSyscallProvider>();
 }
 
 void VirtualMachine::setTraceSink(TraceSink sink) {
@@ -77,9 +77,8 @@ std::expected<void, std::string> VirtualMachine::load(const executable::Executab
     for (const executable::Segment& segment : executable.segments) {
         if (!memory_.addRegion(segment.name, segment.virtual_address, segment.virtual_size,
                                permissionsOf(segment.flags), segment.data)) {
-            return std::unexpected(
-                std::format("cannot map segment '{}' at 0x{:X}", segment.name,
-                            segment.virtual_address));
+            return std::unexpected(std::format("cannot map segment '{}' at 0x{:X}", segment.name,
+                                               segment.virtual_address));
         }
     }
     if (!memory_.addRegion("stack", kStackTop - kStackSize, kStackSize,
@@ -125,10 +124,9 @@ VMFault VirtualMachine::faultFromMemory(const MemoryFault& fault, u64 pc,
 
 std::expected<void, VMFault> VirtualMachine::push(u64 value, u64 pc) {
     if (cpu_.sp < stack_limit_ + sizeof(u64)) {
-        return std::unexpected(VMFault{VMError::StackOverflow,
-                                       std::format("stack overflow: SP = 0x{:X}, limit = 0x{:X}",
-                                                   cpu_.sp, stack_limit_),
-                                       pc});
+        return std::unexpected(VMFault{
+            VMError::StackOverflow,
+            std::format("stack overflow: SP = 0x{:X}, limit = 0x{:X}", cpu_.sp, stack_limit_), pc});
     }
     const u64 target = cpu_.sp - sizeof(u64);
     const MemoryResult<void> written = memory_.writeU64(target, value);
@@ -165,10 +163,9 @@ std::expected<void, VMFault> VirtualMachine::step() {
 
     const u64 pc = cpu_.pc;
     if ((pc % isa::kInstructionSize) != 0) {
-        return std::unexpected(
-            VMFault{VMError::IllegalInstruction,
-                    std::format("PC 0x{:X} is not {}-byte aligned", pc, isa::kInstructionSize),
-                    pc});
+        return std::unexpected(VMFault{
+            VMError::IllegalInstruction,
+            std::format("PC 0x{:X} is not {}-byte aligned", pc, isa::kInstructionSize), pc});
     }
 
     // Fetch requires execute permission, which is what stops a program jumping
@@ -179,11 +176,10 @@ std::expected<void, VMFault> VirtualMachine::step() {
     }
     const std::expected<isa::Instruction, isa::DecodeError> decoded = isa::decode(*word);
     if (!decoded.has_value()) {
-        return std::unexpected(VMFault{
-            VMError::IllegalInstruction,
-            std::format("cannot decode 0x{:016X}: {}", *word,
-                        isa::decodeErrorName(decoded.error())),
-            pc});
+        return std::unexpected(VMFault{VMError::IllegalInstruction,
+                                       std::format("cannot decode 0x{:016X}: {}", *word,
+                                                   isa::decodeErrorName(decoded.error())),
+                                       pc});
     }
 
     if (trace_) {
@@ -203,10 +199,9 @@ std::expected<void, VMFault> VirtualMachine::execute(const isa::Instruction& ins
     // decode() cannot produce an out-of-range register, but an Instruction can
     // also be built in code; check rather than index the register file blindly.
     if (dst >= isa::kRegisterCount || src >= isa::kRegisterCount) {
-        return std::unexpected(VMFault{VMError::IllegalInstruction,
-                                       std::format("register index {}/{} is out of range", dst,
-                                                   src),
-                                       pc});
+        return std::unexpected(
+            VMFault{VMError::IllegalInstruction,
+                    std::format("register index {}/{} is out of range", dst, src), pc});
     }
 
     switch (instruction.opcode) {
@@ -299,13 +294,13 @@ std::expected<void, VMFault> VirtualMachine::execute(const isa::Instruction& ins
                : isa::evaluateUnary(instruction.opcode, cpu_.registers[dst]);
     if (!result.has_value()) {
         if (result.error() == isa::AluError::DivisionByZero) {
-            return std::unexpected(VMFault{
-                VMError::DivisionByZero,
-                std::format("{} by zero", isa::opcodeName(instruction.opcode)), pc});
+            return std::unexpected(
+                VMFault{VMError::DivisionByZero,
+                        std::format("{} by zero", isa::opcodeName(instruction.opcode)), pc});
         }
-        return std::unexpected(VMFault{
-            VMError::IllegalInstruction,
-            std::format("{} is not executable", isa::opcodeName(instruction.opcode)), pc});
+        return std::unexpected(
+            VMFault{VMError::IllegalInstruction,
+                    std::format("{} is not executable", isa::opcodeName(instruction.opcode)), pc});
     }
     if (result->writes_value) {
         cpu_.registers[dst] = result->value;
@@ -327,9 +322,8 @@ RunResult VirtualMachine::run(u64 budget) {
     while (!cpu_.halted) {
         if (executed >= budget) {
             result.error = VMError::BudgetExhausted;
-            result.message =
-                std::format("stopped after {} instructions; the program may not terminate",
-                            executed);
+            result.message = std::format(
+                "stopped after {} instructions; the program may not terminate", executed);
             result.pc = cpu_.pc;
             result.instructions = cpu_.instruction_count;
             return result;

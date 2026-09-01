@@ -9,8 +9,7 @@
 
 namespace minitool {
 
-std::expected<AssembleResult, std::string> assembleSource(const SourceManager& sources,
-                                                          FileId file,
+std::expected<AssembleResult, std::string> assembleSource(const SourceManager& sources, FileId file,
                                                           diag::DiagnosticEngine& diagnostics,
                                                           const AssembleOptions& options) {
     if (!sources.contains(file)) {

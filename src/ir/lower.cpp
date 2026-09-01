@@ -31,8 +31,8 @@ class Lowerer {
             std::visit([this](const auto& node) { lowerStatement(node); }, statement);
         }
         if (failed_) {
-            return std::unexpected(std::format("{} error(s) lowering to IR",
-                                               diagnostics_.errorCount()));
+            return std::unexpected(
+                std::format("{} error(s) lowering to IR", diagnostics_.errorCount()));
         }
         return std::move(module_);
     }
@@ -119,7 +119,7 @@ class Lowerer {
                                     ? static_cast<u8>(directive.operands[1].immediate & 0xFF)
                                     : u8{0};
                 if (fill != 0 && !requireInitialisableSection(directive.location,
-                                                             ".space with a non-zero fill")) {
+                                                              ".space with a non-zero fill")) {
                     return;
                 }
                 emit(Space{size, fill, directive.location});

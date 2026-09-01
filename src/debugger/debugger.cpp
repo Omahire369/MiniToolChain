@@ -62,8 +62,8 @@ std::string describeStop(const StopEvent& event) {
             return std::format("program halted at 0x{:016X}{}", event.pc,
                                event.message.empty() ? "" : ", " + event.message);
         case StopReason::Fault:
-            return std::format("runtime error: {} at 0x{:016X}\n  {}",
-                               vm::vmErrorName(event.error), event.pc, event.message);
+            return std::format("runtime error: {} at 0x{:016X}\n  {}", vm::vmErrorName(event.error),
+                               event.pc, event.message);
         case StopReason::NotRunning:
             return "the program is not running";
     }
@@ -323,8 +323,8 @@ std::string Debugger::formatMemory(u64 address, u64 length) const {
 
 std::string Debugger::formatStack(u64 words) const {
     const vm::CPUState& cpu = machine_.state();
-    std::string out = std::format("stack (SP = 0x{:016X}, top = 0x{:016X})\n", cpu.sp,
-                                  machine_.stackTop());
+    std::string out =
+        std::format("stack (SP = 0x{:016X}, top = 0x{:016X})\n", cpu.sp, machine_.stackTop());
     for (u64 i = 0; i < words; ++i) {
         const u64 address = cpu.sp + i * sizeof(u64);
         if (address >= machine_.stackTop()) {
@@ -373,8 +373,8 @@ std::string Debugger::formatDisassembly(u64 address, u64 count) const {
 
 std::string Debugger::formatBacktrace(u64 max_frames) const {
     const vm::CPUState& cpu = machine_.state();
-    std::string out = std::format("#0  0x{:016X}  {}\n", cpu.pc,
-                                  describeAddress(cpu.pc).value_or("<unknown>"));
+    std::string out =
+        std::format("#0  0x{:016X}  {}\n", cpu.pc, describeAddress(cpu.pc).value_or("<unknown>"));
     u64 frame = 1;
     // Without frame pointers to walk, scan the stack for values that look like
     // return addresses: word-aligned, inside the text segment, and immediately
@@ -386,8 +386,7 @@ std::string Debugger::formatBacktrace(u64 max_frames) const {
             break;
         }
         const u64 candidate = *value;
-        if ((candidate % isa::kInstructionSize) != 0 ||
-            candidate < isa::kInstructionSize) {
+        if ((candidate % isa::kInstructionSize) != 0 || candidate < isa::kInstructionSize) {
             continue;
         }
         const vm::MemoryResult<u64> previous =
@@ -573,8 +572,7 @@ bool Debugger::executeCommand(std::string_view line, std::ostream& out) {
         u64 length = 64;
         if (words.size() > 2) {
             const std::string_view text = argument(2);
-            static_cast<void>(
-                std::from_chars(text.data(), text.data() + text.size(), length));
+            static_cast<void>(std::from_chars(text.data(), text.data() + text.size(), length));
         }
         out << formatMemory(*address, std::min<u64>(length, 4096));
         return true;
@@ -591,8 +589,7 @@ bool Debugger::executeCommand(std::string_view line, std::ostream& out) {
             const std::string_view text = argument(2);
             static_cast<void>(std::from_chars(text.data(), text.data() + text.size(), count));
         }
-        out << formatDisassembly(address.value_or(machine_.state().pc),
-                                 std::min<u64>(count, 256));
+        out << formatDisassembly(address.value_or(machine_.state().pc), std::min<u64>(count, 256));
         return true;
     }
     if (command == "backtrace" || command == "bt") {

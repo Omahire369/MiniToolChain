@@ -127,8 +127,8 @@ bool Parser::parseLine(ast::Program& out) {
     // Any number of labels may precede the statement, on the same line or not:
     //     loop: done: ADD R1, R2
     while (true) {
-        const bool plain_label = peek().type == lexer::TokenType::Identifier &&
-                                 peek(1).type == lexer::TokenType::Colon;
+        const bool plain_label =
+            peek().type == lexer::TokenType::Identifier && peek(1).type == lexer::TokenType::Colon;
         const bool local_label = peek().type == lexer::TokenType::Dot &&
                                  peek(1).type == lexer::TokenType::Identifier &&
                                  peek(2).type == lexer::TokenType::Colon;
@@ -340,8 +340,8 @@ std::optional<ast::Operand> Parser::parseSymbolExpression(std::string name,
             return std::nullopt;
         }
         // Negate through u64 so that -INT64_MIN cannot overflow.
-        operand.immediate = negate ? static_cast<i64>(~static_cast<u64>(addend->intValue) + 1U)
-                                   : addend->intValue;
+        operand.immediate =
+            negate ? static_cast<i64>(~static_cast<u64>(addend->intValue) + 1U) : addend->intValue;
         operand.location.length =
             (addend->location.column + addend->location.length) - operand.location.column;
     }

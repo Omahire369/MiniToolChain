@@ -15,8 +15,8 @@
 /// can load it without further checks.
 namespace minitool::executable {
 
-[[nodiscard]] std::expected<void, std::string> writeExecutableToBuffer(
-    const Executable& executable, std::vector<u8>& buffer);
+[[nodiscard]] std::expected<void, std::string> writeExecutableToBuffer(const Executable& executable,
+                                                                       std::vector<u8>& buffer);
 
 [[nodiscard]] std::expected<Executable, std::string> readExecutableFromBuffer(
     std::span<const u8> buffer);

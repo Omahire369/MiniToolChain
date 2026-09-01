@@ -111,8 +111,8 @@ TEST(Object, StartsWithItsMagicAndVersion) {
 TEST(Object, RejectsAnEmptyOrTruncatedFile) {
     EXPECT_FALSE(readObjectFromBuffer({}).has_value());
     const std::vector<u8> bytes = serialise(sampleObject());
-    for (const std::size_t length : {std::size_t{1}, std::size_t{32}, bytes.size() / 2,
-                                     bytes.size() - 1}) {
+    for (const std::size_t length :
+         {std::size_t{1}, std::size_t{32}, bytes.size() / 2, bytes.size() - 1}) {
         const std::vector<u8> truncated(bytes.begin(),
                                         bytes.begin() + static_cast<std::ptrdiff_t>(length));
         EXPECT_FALSE(readObjectFromBuffer(truncated).has_value()) << length;

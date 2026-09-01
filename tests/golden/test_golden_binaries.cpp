@@ -64,8 +64,7 @@ void checkGolden(std::string_view name, const std::vector<u8>& actual) {
         << path.string() << " changed size; see the header comment in this file";
     for (std::size_t i = 0; i < actual.size(); ++i) {
         ASSERT_EQ(actual[i], expected[i])
-            << path.string() << " differs at byte " << i
-            << "; see the header comment in this file";
+            << path.string() << " differs at byte " << i << "; see the header comment in this file";
     }
 }
 
@@ -171,8 +170,7 @@ TEST(Golden, ObjectFileBytes) {
 }
 
 TEST(Golden, ExecutableBytes) {
-    checkGolden("golden.mexe",
-                linkBytes(kLinkableSource, optimizer::OptLevel::O0, "golden.asm"));
+    checkGolden("golden.mexe", linkBytes(kLinkableSource, optimizer::OptLevel::O0, "golden.asm"));
 }
 
 TEST(Golden, OptimizedExecutableBytes) {
@@ -202,8 +200,7 @@ TEST(Golden, InstructionEncodingsAreFrozen) {
         {isa::Instruction::syscall(1), 0x0200'0000'0000'0001ULL},
         {isa::Instruction::reg2(isa::Opcode::MOV, isa::Reg::R1, isa::Reg::R2),
          0x1012'0000'0000'0000ULL},
-        {isa::Instruction::regImm(isa::Opcode::MOVI, isa::Reg::R1, 42),
-         0x1110'0000'0000'002AULL},
+        {isa::Instruction::regImm(isa::Opcode::MOVI, isa::Reg::R1, 42), 0x1110'0000'0000'002AULL},
         {isa::Instruction::reg2(isa::Opcode::ADD, isa::Reg::R1, isa::Reg::R2),
          0x2012'0000'0000'0000ULL},
         {isa::Instruction::mem(isa::Opcode::LOAD, isa::Reg::R1, isa::Reg::R2, 8),

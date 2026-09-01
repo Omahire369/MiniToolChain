@@ -114,8 +114,8 @@ TEST(Failure, RelocationOverflow) {
 }
 
 TEST(Failure, SectionThatOutgrowsItsRegion) {
-    const testkit::Assembled assembled = testkit::assemble(
-        ".global _start\n.text\n_start:\n    HALT\n.bss\n.space 2000000\n");
+    const testkit::Assembled assembled =
+        testkit::assemble(".global _start\n.text\n_start:\n    HALT\n.bss\n.space 2000000\n");
     ASSERT_TRUE(assembled.ok) << assembled.diagnostics;
     const std::vector<object::ObjectFile> objects{assembled.object};
     const testkit::Linked linked = testkit::link(objects);
@@ -275,8 +275,7 @@ TEST(Failure, RunningOffTheEndOfTheCode) {
 }
 
 TEST(Failure, AProgramThatNeverTerminatesIsStopped) {
-    const testkit::Linked linked =
-        testkit::build(".global _start\n_start:\nspin:\n    JMP spin\n");
+    const testkit::Linked linked = testkit::build(".global _start\n_start:\nspin:\n    JMP spin\n");
     ASSERT_TRUE(linked.ok) << linked.error;
     const testkit::Ran ran = testkit::run(linked.executable, {}, 1000);
     EXPECT_FALSE(ran.ok);

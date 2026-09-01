@@ -52,8 +52,7 @@ struct Optimized {
     }
 };
 
-Optimized optimize(std::string_view source,
-                   optimizer::OptLevel level = optimizer::OptLevel::O1) {
+Optimized optimize(std::string_view source, optimizer::OptLevel level = optimizer::OptLevel::O1) {
     SourceManager sources;
     const FileId file = sources.addFile("test.asm", std::string{source});
     diag::DiagnosticEngine diagnostics(sources);
@@ -80,8 +79,8 @@ Optimized optimize(std::string_view source,
 }
 
 TEST(Optimizer, O0ChangesNothing) {
-    const Optimized result = optimize("MOVI R1, 2\nMOVI R2, 3\nADD R1, R2\nHALT\n",
-                                      optimizer::OptLevel::O0);
+    const Optimized result =
+        optimize("MOVI R1, 2\nMOVI R2, 3\nADD R1, R2\nHALT\n", optimizer::OptLevel::O0);
     EXPECT_EQ(result.instructions().size(), 4U);
     EXPECT_EQ(result.stats.total(), 0U);
 }
@@ -105,8 +104,8 @@ TEST(Optimizer, FoldsConstantArithmetic) {
 TEST(Optimizer, DoesNotFoldWhenTheFlagsAreLive) {
     // The ADD's flags are read by the JE, so rewriting it to MOVI — which sets
     // no flags — would send the program down the wrong branch.
-    const Optimized result = optimize(
-        "MOVI R1, 1\nMOVI R2, -1\nADD R1, R2\nJE zero\nHALT\nzero:\n    HALT\n");
+    const Optimized result =
+        optimize("MOVI R1, 1\nMOVI R2, -1\nADD R1, R2\nJE zero\nHALT\nzero:\n    HALT\n");
     bool has_add = false;
     for (const isa::Instruction& instruction : result.instructions()) {
         has_add = has_add || instruction.opcode == isa::Opcode::ADD;
@@ -200,8 +199,7 @@ TEST(Optimizer, RemovesAJumpToTheNextInstruction) {
 TEST(Optimizer, NeverFoldsAcrossALabel) {
     // R1 is only known to be 1 on the fall-through path; the branch could
     // arrive with anything in it.
-    const Optimized result = optimize(
-        "MOVI R1, 1\ntarget:\nMOVI R2, 2\nADD R1, R2\nJMP target\n");
+    const Optimized result = optimize("MOVI R1, 1\ntarget:\nMOVI R2, 2\nADD R1, R2\nJMP target\n");
     bool has_add = false;
     for (const isa::Instruction& instruction : result.instructions()) {
         has_add = has_add || instruction.opcode == isa::Opcode::ADD;

@@ -150,14 +150,13 @@ TEST(Pipeline, ObjectAndExecutableSurviveARoundTripToDisk) {
     const std::filesystem::path object_path = directory / "program.mobj";
     const std::filesystem::path executable_path = directory / "program.mexe";
 
-    const testkit::Assembled assembled =
-        testkit::assemble(".global _start\n_start:\n    MOVI R1, 7\n    CALL twice\n    HALT\n"
-                          "twice:\n    ADD R1, R1\n    RET\n");
+    const testkit::Assembled assembled = testkit::assemble(
+        ".global _start\n_start:\n    MOVI R1, 7\n    CALL twice\n    HALT\n"
+        "twice:\n    ADD R1, R1\n    RET\n");
     ASSERT_TRUE(assembled.ok) << assembled.diagnostics;
     ASSERT_TRUE(object::writeObject(assembled.object, object_path).has_value());
 
-    const std::expected<object::ObjectFile, std::string> reloaded =
-        object::readObject(object_path);
+    const std::expected<object::ObjectFile, std::string> reloaded = object::readObject(object_path);
     ASSERT_TRUE(reloaded.has_value()) << reloaded.error();
 
     const std::vector<object::ObjectFile> objects{*reloaded};
@@ -226,8 +225,8 @@ _start:
 
 TEST(Pipeline, EveryCheckedInExampleAssemblesLinksAndRuns) {
     constexpr std::array<std::string_view, 8> kExamples{
-        "hello.asm",     "arithmetic.asm", "factorial.asm", "fibonacci.asm",
-        "loops.asm",     "arrays.asm",     "functions.asm", "recursion.asm"};
+        "hello.asm", "arithmetic.asm", "factorial.asm", "fibonacci.asm",
+        "loops.asm", "arrays.asm",     "functions.asm", "recursion.asm"};
     std::size_t checked = 0;
     for (const std::string_view name : kExamples) {
         const std::optional<std::string> source = readExample(name);

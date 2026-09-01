@@ -78,9 +78,9 @@ TEST(Playground, ReportsALinkErrorWithoutRepeatingItself) {
 }
 
 TEST(Playground, ReportsARuntimeTrap) {
-    const RunReport report =
-        runText(".section .text\n.global _start\n_start:\n    MOVI R1, 1\n    MOVI R2, 0\n"
-                "    DIV R1, R2\n    HALT\n");
+    const RunReport report = runText(
+        ".section .text\n.global _start\n_start:\n    MOVI R1, 1\n    MOVI R2, 0\n"
+        "    DIV R1, R2\n    HALT\n");
     EXPECT_FALSE(report.ok);
     EXPECT_EQ(report.stage, Stage::Execute);
     EXPECT_NE(report.error.find("zero"), std::string::npos) << report.error;
@@ -211,12 +211,10 @@ TEST(PlaygroundHttp, ThePageIsWholeAndCarriesEveryExample) {
 
     // Every entry the dropdown offers must actually be present.
     for (const std::string_view name :
-         {"Hello, World!", "Arithmetic", "Bitwise and shifts",
-          "Conditionals and jumps", "The stack", "Factorial (loops)",
-          "Fibonacci (recursion)", "Arrays in memory", "Print a number",
-          "Echo (reads stdin)", "Heap allocation", "Optimizer (try -O0 vs -O1)",
-          "Error: bad operand", "Error: divide by zero",
-          "Error: read-only memory"}) {
+         {"Hello, World!", "Arithmetic", "Bitwise and shifts", "Conditionals and jumps",
+          "The stack", "Factorial (loops)", "Fibonacci (recursion)", "Arrays in memory",
+          "Print a number", "Echo (reads stdin)", "Heap allocation", "Optimizer (try -O0 vs -O1)",
+          "Error: bad operand", "Error: divide by zero", "Error: read-only memory"}) {
         EXPECT_NE(page.find(name), std::string::npos) << "missing example: " << name;
     }
 }
@@ -300,7 +298,7 @@ _start:
     SYSCALL 0
 )";
     const HttpResponse response = handleRequest("POST", "/api/run", kQuotes);
-    EXPECT_NE(response.body.find("\\\"") , std::string::npos) << response.body;
+    EXPECT_NE(response.body.find("\\\""), std::string::npos) << response.body;
     EXPECT_NE(response.body.find("\\\\"), std::string::npos) << response.body;
     EXPECT_NE(response.body.find("\\t"), std::string::npos) << response.body;
 }

@@ -92,16 +92,38 @@ class LinkContext {
 
     void initRegions() {
         regions_ = {
-            Region{SectionType::Text, SegmentType::Text,
-                   SegmentFlags::Read | SegmentFlags::Exec, ".text", options_.text_base, 0, {},
+            Region{SectionType::Text,
+                   SegmentType::Text,
+                   SegmentFlags::Read | SegmentFlags::Exec,
+                   ".text",
+                   options_.text_base,
+                   0,
+                   {},
                    false},
-            Region{SectionType::Rodata, SegmentType::Rodata, SegmentFlags::Read, ".rodata",
-                   options_.rodata_base, 0, {}, false},
-            Region{SectionType::Data, SegmentType::Data,
-                   SegmentFlags::Read | SegmentFlags::Write, ".data", options_.data_base, 0, {},
+            Region{SectionType::Rodata,
+                   SegmentType::Rodata,
+                   SegmentFlags::Read,
+                   ".rodata",
+                   options_.rodata_base,
+                   0,
+                   {},
                    false},
-            Region{SectionType::Bss, SegmentType::Bss, SegmentFlags::Read | SegmentFlags::Write,
-                   ".bss", options_.bss_base, 0, {}, true},
+            Region{SectionType::Data,
+                   SegmentType::Data,
+                   SegmentFlags::Read | SegmentFlags::Write,
+                   ".data",
+                   options_.data_base,
+                   0,
+                   {},
+                   false},
+            Region{SectionType::Bss,
+                   SegmentType::Bss,
+                   SegmentFlags::Read | SegmentFlags::Write,
+                   ".bss",
+                   options_.bss_base,
+                   0,
+                   {},
+                   true},
         };
     }
 
@@ -141,8 +163,7 @@ class LinkContext {
                 }
                 if (!region.zero_filled) {
                     region.data.resize(static_cast<std::size_t>(offset), u8{0});
-                    region.data.insert(region.data.end(), section.data.begin(),
-                                       section.data.end());
+                    region.data.insert(region.data.end(), section.data.begin(), section.data.end());
                     // A section may declare more memory than initialised data
                     // (only .bss does today, but the format allows it).
                     region.data.resize(static_cast<std::size_t>(offset + section.size), u8{0});
@@ -165,9 +186,9 @@ class LinkContext {
         }
         const Placement& placement = placements_[object_index][symbol.section];
         if (!placement.placed) {
-            return fail(diag::ErrorCode::InvalidSectionReference,
-                        std::format("symbol '{}' lives in a section that was not laid out",
-                                    symbol.name));
+            return fail(
+                diag::ErrorCode::InvalidSectionReference,
+                std::format("symbol '{}' lives in a section that was not laid out", symbol.name));
         }
         const Region& region = regions_[placement.region];
         return region.base + placement.offset + symbol.value;
@@ -186,8 +207,8 @@ class LinkContext {
                     return std::unexpected(address.error());
                 }
                 if (symbol.binding == SymbolBinding::Local) {
-                    locals_.push_back(Definition{*address, symbol.size, symbol.binding,
-                                                 symbol.type, object_index});
+                    locals_.push_back(Definition{*address, symbol.size, symbol.binding, symbol.type,
+                                                 object_index});
                     local_names_.push_back(symbol.name);
                     continue;
                 }
@@ -210,9 +231,8 @@ class LinkContext {
                     }
                     continue;
                 }
-                definitions_.emplace(symbol.name, Definition{*address, symbol.size,
-                                                             symbol.binding, symbol.type,
-                                                             object_index});
+                definitions_.emplace(symbol.name, Definition{*address, symbol.size, symbol.binding,
+                                                             symbol.type, object_index});
             }
         }
 
@@ -226,9 +246,8 @@ class LinkContext {
                 if (symbol.binding == SymbolBinding::Weak) {
                     // An unresolved weak reference is defined to be address 0,
                     // which a program can test for.
-                    definitions_.emplace(symbol.name,
-                                         Definition{0, 0, SymbolBinding::Weak, symbol.type,
-                                                    object_index});
+                    definitions_.emplace(symbol.name, Definition{0, 0, SymbolBinding::Weak,
+                                                                 symbol.type, object_index});
                     continue;
                 }
                 return fail(diag::ErrorCode::UndefinedSymbol,
@@ -269,8 +288,7 @@ class LinkContext {
                 const Symbol& symbol = object.symbols.at(relocation.symbol);
                 u64 symbol_address = 0;
                 if (symbol.defined && symbol.binding == SymbolBinding::Local) {
-                    const std::expected<u64, std::string> address =
-                        addressOf(object_index, symbol);
+                    const std::expected<u64, std::string> address = addressOf(object_index, symbol);
                     if (!address.has_value()) {
                         return std::unexpected(address.error());
                     }
@@ -310,9 +328,9 @@ class LinkContext {
 
         const auto entry = definitions_.find(options_.entry);
         if (entry == definitions_.end()) {
-            return fail(diag::ErrorCode::UndefinedSymbol,
-                        std::format("entry point '{}' is not defined in any object",
-                                    options_.entry));
+            return fail(
+                diag::ErrorCode::UndefinedSymbol,
+                std::format("entry point '{}' is not defined in any object", options_.entry));
         }
         executable.entry_point = entry->second.address;
 
@@ -343,16 +361,15 @@ class LinkContext {
                 if (definitions_.contains(local_names_[i])) {
                     continue;
                 }
-                executable.symbols.push_back(executable::SymbolEntry{
-                    local_names_[i], locals_[i].address, locals_[i].size,
-                    symbolKind(locals_[i].type)});
+                executable.symbols.push_back(
+                    executable::SymbolEntry{local_names_[i], locals_[i].address, locals_[i].size,
+                                            symbolKind(locals_[i].type)});
             }
         }
-        std::ranges::sort(executable.symbols,
-                          [](const executable::SymbolEntry& a, const executable::SymbolEntry& b) {
-                              return a.address == b.address ? a.name < b.name
-                                                            : a.address < b.address;
-                          });
+        std::ranges::sort(executable.symbols, [](const executable::SymbolEntry& a,
+                                                 const executable::SymbolEntry& b) {
+            return a.address == b.address ? a.name < b.name : a.address < b.address;
+        });
 
         buildDebugInfo(executable);
 

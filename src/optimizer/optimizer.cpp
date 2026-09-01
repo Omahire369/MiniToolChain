@@ -428,8 +428,8 @@ bool Optimizer::runPasses(ir::Section& section, OptStats& stats) const {
             }
             if (machine.opcode == isa::Opcode::MOV) {
                 const std::optional<u64> value = constants.get(machine.src);
-                if (value.has_value() && byteorder::fitsSigned(static_cast<i64>(*value),
-                                                               isa::kImmediateBits)) {
+                if (value.has_value() &&
+                    byteorder::fitsSigned(static_cast<i64>(*value), isa::kImmediateBits)) {
                     machine.opcode = isa::Opcode::MOVI;
                     machine.imm = static_cast<i64>(*value);
                     machine.src = isa::Reg::R0;
@@ -479,8 +479,7 @@ bool Optimizer::runPasses(ir::Section& section, OptStats& stats) const {
             }
             // Replacing the instruction with MOVI also drops its FLAGS write,
             // so only do it where the flags cannot be observed.
-            const bool flags_ok =
-                !evaluated->writes_flags || flow.flagsDeadAfter(block_index, i);
+            const bool flags_ok = !evaluated->writes_flags || flow.flagsDeadAfter(block_index, i);
             const bool representable =
                 byteorder::fitsSigned(static_cast<i64>(evaluated->value), isa::kImmediateBits);
             if (flags_ok && representable) {

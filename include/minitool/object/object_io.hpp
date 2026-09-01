@@ -28,8 +28,7 @@ namespace minitool::object {
 [[nodiscard]] std::expected<void, std::string> writeObject(const ObjectFile& object,
                                                            const std::filesystem::path& path);
 
-[[nodiscard]] std::expected<ObjectFile, std::string> readObject(
-    const std::filesystem::path& path);
+[[nodiscard]] std::expected<ObjectFile, std::string> readObject(const std::filesystem::path& path);
 
 /// Reads a whole file into memory, reporting a readable error on failure.
 [[nodiscard]] std::expected<std::vector<u8>, std::string> readFileBytes(

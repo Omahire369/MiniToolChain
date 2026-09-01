@@ -86,8 +86,8 @@ class AssemblyContext {
         applyBindings();
         emit();
         if (failed_) {
-            return std::unexpected(std::format("{} error(s) while assembling",
-                                               diagnostics_.errorCount()));
+            return std::unexpected(
+                std::format("{} error(s) while assembling", diagnostics_.errorCount()));
         }
         return std::move(object_);
     }
@@ -168,7 +168,7 @@ class AssemblyContext {
         // Labels start local; `.global` / `.weak` promote them afterwards.
         symbol.binding = SymbolBinding::Local;
         symbol.type = object_.sections[section].type == SectionType::Text ? SymbolType::Function
-                                                                         : SymbolType::Object;
+                                                                          : SymbolType::Object;
     }
 
     /// Applies `.global`, `.extern` and `.weak`. A name that is declared but
@@ -262,8 +262,7 @@ class AssemblyContext {
         }
     }
 
-    void emitInstruction(const ir::Instruction& instruction, u32 section,
-                         std::vector<u8>& bytes) {
+    void emitInstruction(const ir::Instruction& instruction, u32 section, std::vector<u8>& bytes) {
         const u64 offset = bytes.size();
         isa::Instruction machine = instruction.machine;
         if (instruction.isSymbolic()) {
@@ -289,9 +288,8 @@ class AssemblyContext {
                               isa::encodeErrorName(encoded.error())));
             return;
         }
-        object_.debug_info.push_back(object::DebugEntry{section, 0, offset,
-                                                        instruction.location.line,
-                                                        instruction.location.column});
+        object_.debug_info.push_back(object::DebugEntry{
+            section, 0, offset, instruction.location.line, instruction.location.column});
     }
 
     void emitSymbolValue(const ir::SymbolValue& value, u32 section, std::vector<u8>& bytes) {

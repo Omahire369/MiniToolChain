@@ -938,5 +938,4 @@ run();
 </html>
 )PAGE";
 
-
 }  // namespace minitool::playground

@@ -192,8 +192,7 @@ message: .asciz "Hi!"
 _start:
     HALT
 )");
-    const std::string text =
-        session->debugger->formatMemory(session->symbol("message"), 4);
+    const std::string text = session->debugger->formatMemory(session->symbol("message"), 4);
     EXPECT_TRUE(contains(text, "48 69 21 00"));
     EXPECT_TRUE(contains(text, "|Hi!"));
     // Unmapped bytes are shown as ?? rather than being invented.
@@ -219,8 +218,8 @@ TEST(Debugger, ShowsTheStackAndBacktrace) {
 
 TEST(Debugger, DisassemblesAroundTheProgramCounter) {
     const auto session = makeSession();
-    const std::string text = session->debugger->formatDisassembly(
-        session->linked.executable.entry_point, 3);
+    const std::string text =
+        session->debugger->formatDisassembly(session->linked.executable.entry_point, 3);
     EXPECT_TRUE(contains(text, "MOVI R1, 40"));
     EXPECT_TRUE(contains(text, "=>"));  // the current instruction is marked
 }
@@ -230,8 +229,8 @@ TEST(Debugger, MapsAddressesBackToSource) {
     const std::string text =
         session->debugger->formatSourceLocation(session->linked.executable.entry_point);
     EXPECT_TRUE(contains(text, "test.asm:"));
-    EXPECT_TRUE(contains(session->debugger->formatSourceLocation(0xDEAD'0000),
-                         "no source information"));
+    EXPECT_TRUE(
+        contains(session->debugger->formatSourceLocation(0xDEAD'0000), "no source information"));
 }
 
 TEST(Debugger, LooksUpSymbolsBothWays) {
@@ -240,10 +239,10 @@ TEST(Debugger, LooksUpSymbolsBothWays) {
     EXPECT_FALSE(session->debugger->findSymbol("nope").has_value());
     EXPECT_EQ(session->debugger->describeAddress(session->symbol("add_them")).value_or(""),
               "add_them");
-    EXPECT_EQ(session->debugger
-                  ->describeAddress(session->symbol("add_them") + isa::kInstructionSize)
-                  .value_or(""),
-              "add_them+8");
+    EXPECT_EQ(
+        session->debugger->describeAddress(session->symbol("add_them") + isa::kInstructionSize)
+            .value_or(""),
+        "add_them+8");
 }
 
 TEST(Debugger, RunsCommands) {

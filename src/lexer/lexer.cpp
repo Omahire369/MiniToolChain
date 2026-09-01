@@ -69,8 +69,7 @@ Token Lexer::makeToken(TokenType type, const char* start) const {
     Token token;
     token.type = type;
     token.text = std::string_view(start, static_cast<std::size_t>(ptr_ - start));
-    token.location = SourceLocation{file_, line_,
-                                    static_cast<u32>(start - line_start_) + 1U,
+    token.location = SourceLocation{file_, line_, static_cast<u32>(start - line_start_) + 1U,
                                     static_cast<u32>(ptr_ - start)};
     return token;
 }

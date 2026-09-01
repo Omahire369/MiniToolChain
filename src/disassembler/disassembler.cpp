@@ -12,8 +12,7 @@ namespace {
 
 /// Renders `address` as a symbol reference when one starts exactly there,
 /// otherwise as a bare address.
-[[nodiscard]] std::string describeTarget(u64 address,
-                                         const executable::Executable* executable) {
+[[nodiscard]] std::string describeTarget(u64 address, const executable::Executable* executable) {
     if (executable != nullptr) {
         for (const executable::SymbolEntry& symbol : executable->symbols) {
             if (symbol.address == address) {
@@ -22,8 +21,8 @@ namespace {
         }
         const executable::SymbolEntry* containing = executable->symbolContaining(address);
         if (containing != nullptr && containing->address != address) {
-            return std::format("{}+{} (0x{:X})", containing->name,
-                               address - containing->address, address);
+            return std::format("{}+{} (0x{:X})", containing->name, address - containing->address,
+                               address);
         }
     }
     return std::format("0x{:X}", address);
@@ -63,8 +62,7 @@ std::string Disassembler::disassemble(std::span<const u8> code, u64 base_address
             }
         }
 
-        const std::span<const u8> word_bytes =
-            code.subspan(offset, isa::kInstructionSize);
+        const std::span<const u8> word_bytes = code.subspan(offset, isa::kInstructionSize);
         const u64 word = byteorder::load<u64>(word_bytes);
         const std::expected<isa::Instruction, isa::DecodeError> decoded = isa::decode(word);
 

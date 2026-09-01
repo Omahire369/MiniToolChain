@@ -47,9 +47,9 @@ struct Measurement {
     [[nodiscard]] double percentile(double fraction) const {
         std::vector<double> sorted = samples;
         std::ranges::sort(sorted);
-        const std::size_t index = std::min(
-            sorted.size() - 1,
-            static_cast<std::size_t>(fraction * static_cast<double>(sorted.size())));
+        const std::size_t index =
+            std::min(sorted.size() - 1,
+                     static_cast<std::size_t>(fraction * static_cast<double>(sorted.size())));
         return sorted[index];
     }
 
@@ -196,8 +196,7 @@ int main(int argc, char** argv) {
     linker::Linker linker(link_diagnostics);
     const std::expected<executable::Executable, std::string> executable = linker.link(objects);
     if (!executable.has_value()) {
-        std::fprintf(stderr, "benchmark program failed to link: %s\n",
-                     executable.error().c_str());
+        std::fprintf(stderr, "benchmark program failed to link: %s\n", executable.error().c_str());
         return 1;
     }
     std::vector<u8> exe_bytes;
@@ -234,11 +233,11 @@ int main(int argc, char** argv) {
     }));
 
     // --- binary formats -----------------------------------------------------
-    report(measure("object write", static_cast<double>(object_bytes.size()), "bytes", iterations,
-                   [&] {
-                       std::vector<u8> bytes;
-                       static_cast<void>(object::writeObjectToBuffer(assembled->object, bytes));
-                   }));
+    report(
+        measure("object write", static_cast<double>(object_bytes.size()), "bytes", iterations, [&] {
+            std::vector<u8> bytes;
+            static_cast<void>(object::writeObjectToBuffer(assembled->object, bytes));
+        }));
 
     report(measure("object read", static_cast<double>(object_bytes.size()), "bytes", iterations,
                    [&] { static_cast<void>(object::readObjectFromBuffer(object_bytes)); }));
@@ -276,15 +275,14 @@ int main(int argc, char** argv) {
         static_cast<void>(machine.run());
     }));
 
-    report(measure("vm with tracing", kLoopInstructions, "instructions",
-                   std::max(3, iterations / 5), [&] {
-                       vm::VirtualMachine machine;
-                       u64 counter = 0;
-                       machine.setTraceSink(
-                           [&counter](u64, const isa::Instruction&) { ++counter; });
-                       static_cast<void>(machine.load(*loop_executable));
-                       static_cast<void>(machine.run());
-                   }));
+    report(measure(
+        "vm with tracing", kLoopInstructions, "instructions", std::max(3, iterations / 5), [&] {
+            vm::VirtualMachine machine;
+            u64 counter = 0;
+            machine.setTraceSink([&counter](u64, const isa::Instruction&) { ++counter; });
+            static_cast<void>(machine.load(*loop_executable));
+            static_cast<void>(machine.run());
+        }));
 
     // --- disassembler -------------------------------------------------------
     report(measure("disassemble", instruction_count, "instructions", iterations, [&] {
@@ -313,12 +311,12 @@ int main(int argc, char** argv) {
     };
     const u64 unoptimized = runInstructions(optimizer::OptLevel::O0);
     const u64 optimized = runInstructions(optimizer::OptLevel::O1);
-    std::printf("  instructions executed  -O0 %llu, -O1 %llu (%.1f%% fewer)\n",
-                static_cast<unsigned long long>(unoptimized),
-                static_cast<unsigned long long>(optimized),
-                unoptimized == 0 ? 0.0
-                                 : 100.0 * (1.0 - static_cast<double>(optimized) /
-                                                      static_cast<double>(unoptimized)));
+    std::printf(
+        "  instructions executed  -O0 %llu, -O1 %llu (%.1f%% fewer)\n",
+        static_cast<unsigned long long>(unoptimized), static_cast<unsigned long long>(optimized),
+        unoptimized == 0
+            ? 0.0
+            : 100.0 * (1.0 - static_cast<double>(optimized) / static_cast<double>(unoptimized)));
     std::printf("  image size             -O0 %zu bytes\n", exe_bytes.size());
     return 0;
 }

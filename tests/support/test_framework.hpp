@@ -76,14 +76,14 @@ inline Result failure(std::string detail) {
     return Result{false, std::move(detail)};
 }
 
-#define MT_DEFINE_COMPARISON(suffix, op)                                               \
-    template <typename A, typename B>                                                  \
-    Result cmp##suffix(const char* atext, const char* btext, const A& a, const B& b) { \
-        if (a op b) {                                                                  \
-            return pass();                                                             \
-        }                                                                              \
-        return failure(std::format("  expected: {} " #op " {}\n    actual: {} vs {}",  \
-                                   atext, btext, describe(a), describe(b)));           \
+#define MT_DEFINE_COMPARISON(suffix, op)                                                     \
+    template <typename A, typename B>                                                        \
+    Result cmp##suffix(const char* atext, const char* btext, const A& a, const B& b) {       \
+        if (a op b) {                                                                        \
+            return pass();                                                                   \
+        }                                                                                    \
+        return failure(std::format("  expected: {} " #op " {}\n    actual: {} vs {}", atext, \
+                                   btext, describe(a), describe(b)));                        \
     }
 
 MT_DEFINE_COMPARISON(EQ, ==)

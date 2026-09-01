@@ -24,8 +24,7 @@ class Assembler {
   public:
     explicit Assembler(diag::DiagnosticEngine& diagnostics) noexcept;
 
-    [[nodiscard]] std::expected<object::ObjectFile, std::string> assemble(
-        const ir::Module& module);
+    [[nodiscard]] std::expected<object::ObjectFile, std::string> assemble(const ir::Module& module);
 
   private:
     diag::DiagnosticEngine& diagnostics_;

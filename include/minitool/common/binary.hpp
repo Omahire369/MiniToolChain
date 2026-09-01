@@ -143,11 +143,10 @@ class Reader {
 
     /// Borrows `count` bytes at an absolute offset, leaving the cursor alone.
     [[nodiscard]] std::expected<std::span<const u8>, std::string> rawAt(std::size_t offset,
-                                                                       std::size_t count) const {
+                                                                        std::size_t count) const {
         if (offset > data_.size() || count > data_.size() - offset) {
-            return std::unexpected(
-                std::format("region [{}, {}) is outside the {}-byte file", offset, offset + count,
-                            data_.size()));
+            return std::unexpected(std::format("region [{}, {}) is outside the {}-byte file",
+                                               offset, offset + count, data_.size()));
         }
         return data_.subspan(offset, count);
     }
@@ -180,11 +179,11 @@ class Reader {
 /// Reads the NUL-terminated string at `offset` inside a string table blob.
 /// Rejects an offset outside the table and a table whose final string is
 /// unterminated, so a corrupt file cannot make the reader walk off the end.
-[[nodiscard]] inline std::expected<std::string, std::string> readString(
-    std::span<const u8> table, u32 offset) {
+[[nodiscard]] inline std::expected<std::string, std::string> readString(std::span<const u8> table,
+                                                                        u32 offset) {
     if (offset >= table.size()) {
-        return std::unexpected(std::format(
-            "string offset {} is outside the {}-byte string table", offset, table.size()));
+        return std::unexpected(std::format("string offset {} is outside the {}-byte string table",
+                                           offset, table.size()));
     }
     const std::span<const u8> tail = table.subspan(offset);
     for (std::size_t i = 0; i < tail.size(); ++i) {

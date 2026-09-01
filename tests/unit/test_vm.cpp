@@ -296,8 +296,7 @@ TEST(Vm, TrapsOnAnUnknownSyscall) {
 }
 
 TEST(Vm, StopsAnEndlessProgramAtTheBudget) {
-    const testkit::Linked linked =
-        testkit::build(".global _start\n_start:\nloop:\n    JMP loop\n");
+    const testkit::Linked linked = testkit::build(".global _start\n_start:\nloop:\n    JMP loop\n");
     ASSERT_TRUE(linked.ok) << linked.error;
     const testkit::Ran ran = testkit::run(linked.executable, {}, 500);
     EXPECT_FALSE(ran.ok);
@@ -319,8 +318,7 @@ TEST(Vm, CountsInstructionsAndReportsThePc) {
 }
 
 TEST(Vm, TracesEveryInstruction) {
-    const testkit::Linked linked =
-        testkit::build(".global _start\n_start:\n    NOP\n    HALT\n");
+    const testkit::Linked linked = testkit::build(".global _start\n_start:\n    NOP\n    HALT\n");
     ASSERT_TRUE(linked.ok) << linked.error;
     vm::VirtualMachine machine;
     std::vector<u64> seen;

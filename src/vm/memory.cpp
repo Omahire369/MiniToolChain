@@ -168,8 +168,7 @@ MemoryResult<void> VirtualMemory::readBytes(u64 address, std::span<u8> out) cons
     if (out.empty()) {
         return {};
     }
-    const MemoryResult<const Region*> region =
-        checkAccess(address, out.size(), Permission::Read);
+    const MemoryResult<const Region*> region = checkAccess(address, out.size(), Permission::Read);
     if (!region.has_value()) {
         return std::unexpected(region.error());
     }
@@ -190,8 +189,7 @@ MemoryResult<void> VirtualMemory::writeBytes(u64 address, std::span<const u8> da
     }
     Region* region = findRegion(address);
     const std::size_t offset = static_cast<std::size_t>(address - region->base);
-    std::copy(data.begin(), data.end(),
-              region->data.begin() + static_cast<std::ptrdiff_t>(offset));
+    std::copy(data.begin(), data.end(), region->data.begin() + static_cast<std::ptrdiff_t>(offset));
     return {};
 }
 

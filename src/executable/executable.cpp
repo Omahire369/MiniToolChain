@@ -92,28 +92,25 @@ std::expected<void, std::string> validate(const Executable& executable) {
 
     for (const Segment& segment : executable.segments) {
         if (segment.virtual_size == 0) {
-            return std::unexpected(
-                std::format("segment '{}' occupies no memory", segment.name));
+            return std::unexpected(std::format("segment '{}' occupies no memory", segment.name));
         }
         if (segment.virtual_size < segment.data.size()) {
             return std::unexpected(std::format(
                 "segment '{}' holds {} bytes of data but claims only {} bytes of memory",
                 segment.name, segment.data.size(), segment.virtual_size));
         }
-        if (segment.virtual_address >
-            std::numeric_limits<u64>::max() - segment.virtual_size) {
+        if (segment.virtual_address > std::numeric_limits<u64>::max() - segment.virtual_size) {
             return std::unexpected(
                 std::format("segment '{}' wraps past the end of the address space", segment.name));
         }
         if (segment.type == SegmentType::Bss && !segment.data.empty()) {
-            return std::unexpected(
-                std::format("segment '{}' is .bss but carries {} bytes of data", segment.name,
-                            segment.data.size()));
+            return std::unexpected(std::format("segment '{}' is .bss but carries {} bytes of data",
+                                               segment.name, segment.data.size()));
         }
         if (hasFlag(segment.flags, SegmentFlags::Write) &&
             hasFlag(segment.flags, SegmentFlags::Exec)) {
-            return std::unexpected(std::format(
-                "segment '{}' is both writable and executable", segment.name));
+            return std::unexpected(
+                std::format("segment '{}' is both writable and executable", segment.name));
         }
     }
 
@@ -123,8 +120,8 @@ std::expected<void, std::string> validate(const Executable& executable) {
             const Segment& b = executable.segments[j];
             if (a.virtual_address < b.virtual_address + b.virtual_size &&
                 b.virtual_address < a.virtual_address + a.virtual_size) {
-                return std::unexpected(std::format(
-                    "segments '{}' and '{}' overlap in memory", a.name, b.name));
+                return std::unexpected(
+                    std::format("segments '{}' and '{}' overlap in memory", a.name, b.name));
             }
         }
     }
@@ -135,8 +132,8 @@ std::expected<void, std::string> validate(const Executable& executable) {
     }
     const Segment* entry_segment = executable.findSegment(executable.entry_point);
     if (entry_segment == nullptr) {
-        return std::unexpected(std::format("entry point 0x{:X} is not inside any segment",
-                                           executable.entry_point));
+        return std::unexpected(
+            std::format("entry point 0x{:X} is not inside any segment", executable.entry_point));
     }
     if (!hasFlag(entry_segment->flags, SegmentFlags::Exec)) {
         return std::unexpected(std::format("entry point 0x{:X} is in non-executable segment '{}'",
@@ -145,8 +142,8 @@ std::expected<void, std::string> validate(const Executable& executable) {
 
     for (const DebugEntry& entry : executable.debug_info) {
         if (entry.file >= executable.source_files.size()) {
-            return std::unexpected(std::format("debug entry names source file {} of {}",
-                                               entry.file, executable.source_files.size()));
+            return std::unexpected(std::format("debug entry names source file {} of {}", entry.file,
+                                               executable.source_files.size()));
         }
     }
     return {};

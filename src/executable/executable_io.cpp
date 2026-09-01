@@ -30,8 +30,8 @@ std::expected<void, std::string> writeExecutableToBuffer(const Executable& execu
     // a link error, not a mysterious failure at run time.
     const std::expected<void, std::string> valid = validate(executable);
     if (!valid.has_value()) {
-        return std::unexpected(std::format("refusing to write an invalid executable: {}",
-                                           valid.error()));
+        return std::unexpected(
+            std::format("refusing to write an invalid executable: {}", valid.error()));
     }
 
     binary::StringTable strings;
@@ -116,9 +116,9 @@ std::expected<void, std::string> writeExecutableToBuffer(const Executable& execu
 
 std::expected<Executable, std::string> readExecutableFromBuffer(std::span<const u8> buffer) {
     if (buffer.size() < kExeHeaderSize) {
-        return std::unexpected(std::format(
-            "not an executable: {} bytes is shorter than the {}-byte header", buffer.size(),
-            kExeHeaderSize));
+        return std::unexpected(
+            std::format("not an executable: {} bytes is shorter than the {}-byte header",
+                        buffer.size(), kExeHeaderSize));
     }
     binary::Reader reader(buffer);
     const std::expected<std::span<const u8>, std::string> magic = reader.raw(kExeMagic.size());
@@ -148,16 +148,16 @@ std::expected<Executable, std::string> readExecutableFromBuffer(std::span<const 
         return std::unexpected(std::string{"truncated executable header"});
     }
     if (*version != kExeVersion) {
-        return std::unexpected(std::format(
-            "unsupported executable version {} (this build understands {})", *version,
-            kExeVersion));
+        return std::unexpected(
+            std::format("unsupported executable version {} (this build understands {})", *version,
+                        kExeVersion));
     }
     if (*header_size != kExeHeaderSize) {
         return std::unexpected(std::format("unsupported executable header size {}", *header_size));
     }
     if (*file_size != buffer.size()) {
-        return std::unexpected(std::format("executable claims to be {} bytes but is {}",
-                                           *file_size, buffer.size()));
+        return std::unexpected(
+            std::format("executable claims to be {} bytes but is {}", *file_size, buffer.size()));
     }
     const u32 actual = crc32(buffer.subspan(kExeHeaderSize));
     if (actual != *checksum) {
@@ -177,9 +177,8 @@ std::expected<Executable, std::string> readExecutableFromBuffer(std::span<const 
         return std::unexpected(std::string{"executable table layout is inconsistent"});
     }
 
-    const std::expected<std::span<const u8>, std::string> string_table =
-        reader.rawAt(static_cast<std::size_t>(*string_offset),
-                     static_cast<std::size_t>(*string_size));
+    const std::expected<std::span<const u8>, std::string> string_table = reader.rawAt(
+        static_cast<std::size_t>(*string_offset), static_cast<std::size_t>(*string_size));
     if (!string_table.has_value()) {
         return std::unexpected(string_table.error());
     }
@@ -200,17 +199,17 @@ std::expected<Executable, std::string> readExecutableFromBuffer(std::span<const 
         const auto data_offset = reader.u64v();
         const auto data_size = reader.u64v();
         if (!padded || !name_offset.has_value() || !type.has_value() || !flags.has_value() ||
-            !virtual_address.has_value() || !virtual_size.has_value() ||
-            !data_offset.has_value() || !data_size.has_value()) {
+            !virtual_address.has_value() || !virtual_size.has_value() || !data_offset.has_value() ||
+            !data_size.has_value()) {
             return std::unexpected(std::string{"truncated segment table"});
         }
         if (!isValidSegmentType(*type)) {
             return std::unexpected(std::format("invalid segment type {}", *type));
         }
         if (*data_offset > blob.size() || *data_size > blob.size() - *data_offset) {
-            return std::unexpected(std::format(
-                "segment data range [{}, {}) is outside the {}-byte image", *data_offset,
-                *data_offset + *data_size, blob.size()));
+            return std::unexpected(
+                std::format("segment data range [{}, {}) is outside the {}-byte image",
+                            *data_offset, *data_offset + *data_size, blob.size()));
         }
         const std::expected<std::string, std::string> name =
             binary::readString(*string_table, *name_offset);
@@ -264,8 +263,8 @@ std::expected<Executable, std::string> readExecutableFromBuffer(std::span<const 
             return std::unexpected(std::string{"truncated debug table"});
         }
         if (*file >= *source_count) {
-            return std::unexpected(std::format("debug entry names source file {} of {}", *file,
-                                               *source_count));
+            return std::unexpected(
+                std::format("debug entry names source file {} of {}", *file, *source_count));
         }
         executable.debug_info.push_back(DebugEntry{*address, *file, *line, *column});
     }

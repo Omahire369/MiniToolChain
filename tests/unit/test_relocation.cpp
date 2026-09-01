@@ -38,9 +38,8 @@ TEST(Relocation, Abs64StoresTheSymbolAddressPlusAddend) {
 
 TEST(Relocation, Abs32RejectsValuesThatDoNotFit) {
     std::vector<u8> data(4, 0);
-    EXPECT_TRUE(
-        applyRelocation(data, 0, makeRelocation(RelocationType::ABS32, 0), 0xFFFF'FFFFU)
-            .has_value());
+    EXPECT_TRUE(applyRelocation(data, 0, makeRelocation(RelocationType::ABS32, 0), 0xFFFF'FFFFU)
+                    .has_value());
     EXPECT_EQ(byteorder::load<u32>(data), 0xFFFF'FFFFU);
 
     const auto overflowed =
@@ -54,23 +53,20 @@ TEST(Relocation, Abs32RejectsValuesThatDoNotFit) {
 TEST(Relocation, PcRel32IsRelativeToTheFieldItself) {
     std::vector<u8> data(4, 0);
     // Field at 0x1000, symbol at 0x1100 -> 0x100.
-    ASSERT_TRUE(
-        applyRelocation(data, 0x1000, makeRelocation(RelocationType::PCREL32, 0), 0x1100)
-            .has_value());
+    ASSERT_TRUE(applyRelocation(data, 0x1000, makeRelocation(RelocationType::PCREL32, 0), 0x1100)
+                    .has_value());
     EXPECT_EQ(static_cast<i32>(byteorder::load<u32>(data)), 0x100);
 
     // Backwards references are negative.
-    ASSERT_TRUE(
-        applyRelocation(data, 0x1000, makeRelocation(RelocationType::PCREL32, 0), 0x0F00)
-            .has_value());
+    ASSERT_TRUE(applyRelocation(data, 0x1000, makeRelocation(RelocationType::PCREL32, 0), 0x0F00)
+                    .has_value());
     EXPECT_EQ(static_cast<i32>(byteorder::load<u32>(data)), -0x100);
 }
 
 TEST(Relocation, Imm48WritesIntoTheInstructionField) {
     std::vector<u8> data = instructionBuffer(isa::Opcode::LEA);
-    ASSERT_TRUE(
-        applyRelocation(data, 0x1000, makeRelocation(RelocationType::IMM48, 0, 8), 0x200000)
-            .has_value());
+    ASSERT_TRUE(applyRelocation(data, 0x1000, makeRelocation(RelocationType::IMM48, 0, 8), 0x200000)
+                    .has_value());
     const std::expected<isa::Instruction, isa::DecodeError> decoded = isa::decodeFrom(data);
     ASSERT_TRUE(decoded.has_value());
     EXPECT_EQ(decoded->opcode, isa::Opcode::LEA);
@@ -81,9 +77,9 @@ TEST(Relocation, PcRel48MatchesTheIsaBranchRule) {
     std::vector<u8> data = instructionBuffer(isa::Opcode::CALL);
     constexpr u64 kBranchAt = 0x1000;
     constexpr u64 kTarget = 0x1040;
-    ASSERT_TRUE(applyRelocation(data, kBranchAt, makeRelocation(RelocationType::PCREL48, 0),
-                                kTarget)
-                    .has_value());
+    ASSERT_TRUE(
+        applyRelocation(data, kBranchAt, makeRelocation(RelocationType::PCREL48, 0), kTarget)
+            .has_value());
     const std::expected<isa::Instruction, isa::DecodeError> decoded = isa::decodeFrom(data);
     ASSERT_TRUE(decoded.has_value());
     // The displacement is relative to the *next* instruction, and the VM's own
@@ -94,9 +90,8 @@ TEST(Relocation, PcRel48MatchesTheIsaBranchRule) {
 
 TEST(Relocation, PcRel48HandlesBackwardBranches) {
     std::vector<u8> data = instructionBuffer(isa::Opcode::JMP);
-    ASSERT_TRUE(
-        applyRelocation(data, 0x1080, makeRelocation(RelocationType::PCREL48, 0), 0x1000)
-            .has_value());
+    ASSERT_TRUE(applyRelocation(data, 0x1080, makeRelocation(RelocationType::PCREL48, 0), 0x1000)
+                    .has_value());
     const std::expected<isa::Instruction, isa::DecodeError> decoded = isa::decodeFrom(data);
     ASSERT_TRUE(decoded.has_value());
     EXPECT_EQ(decoded->imm, -0x88);

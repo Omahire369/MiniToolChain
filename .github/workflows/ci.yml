@@ -79,13 +79,16 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      # Pinned: clang-format changes its line breaking between major versions,
+      # so an unpinned tool turns a green tree red on an unrelated upgrade.
+      # The codebase is formatted with exactly this version.
       - name: Install clang-format
-        run: sudo apt-get update && sudo apt-get install -y clang-format
+        run: sudo apt-get update && sudo apt-get install -y clang-format-18
       - name: Check formatting
         run: |
           find include src tests benchmarks \
             \( -name '*.hpp' -o -name '*.cpp' \) -print0 \
-            | xargs -0 clang-format --dry-run --Werror
+            | xargs -0 clang-format-18 --dry-run --Werror
 
   tidy:
     runs-on: ubuntu-24.04

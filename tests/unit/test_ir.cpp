@@ -126,9 +126,8 @@ TEST(Ir, StartsInTextWithoutASectionDirective) {
 }
 
 TEST(Ir, SectionNamesRoundTrip) {
-    for (const ir::SectionKind kind :
-         {ir::SectionKind::Text, ir::SectionKind::Rodata, ir::SectionKind::Data,
-          ir::SectionKind::Bss}) {
+    for (const ir::SectionKind kind : {ir::SectionKind::Text, ir::SectionKind::Rodata,
+                                       ir::SectionKind::Data, ir::SectionKind::Bss}) {
         EXPECT_EQ(ir::sectionKindFromName(ir::sectionName(kind)), kind);
     }
     EXPECT_FALSE(ir::sectionKindFromName(".nope").has_value());

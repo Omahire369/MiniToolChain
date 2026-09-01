@@ -84,9 +84,7 @@ class ProgramGenerator {
     }
 
   private:
-    int pick(int low, int high) {
-        return std::uniform_int_distribution<int>(low, high)(random_);
-    }
+    int pick(int low, int high) { return std::uniform_int_distribution<int>(low, high)(random_); }
 
     std::mt19937 random_;
 };

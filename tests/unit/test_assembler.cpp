@@ -83,9 +83,9 @@ TEST(Assembler, EmitsDataDirectives) {
     ASSERT_TRUE(result.ok) << result.diagnostics;
     const object::Section* data = section(result.object, ".data");
     ASSERT_NE(data, nullptr);
-    const std::vector<u8> expected{1,    2,    3,               // .byte
-                                   0x34, 0x12,                  // .word, little-endian
-                                   'h',  'i',  0,               // .asciz
+    const std::vector<u8> expected{1,    2,    3,  // .byte
+                                   0x34, 0x12,     // .word, little-endian
+                                   'h',  'i',  0,  // .asciz
                                    0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11};
     EXPECT_EQ(data->data, expected);
     EXPECT_EQ(result.object.symbols.find("word")->value, 3U);

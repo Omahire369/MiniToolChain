@@ -35,8 +35,7 @@ struct Assembled {
     /// True if any reported diagnostic mentions `text`; used to assert on the
     /// message a user actually sees.
     [[nodiscard]] bool mentions(std::string_view text) const {
-        return diagnostics.find(text) != std::string::npos ||
-               error.find(text) != std::string::npos;
+        return diagnostics.find(text) != std::string::npos || error.find(text) != std::string::npos;
     }
 };
 
@@ -79,8 +78,7 @@ inline Linked link(std::span<const object::ObjectFile> objects,
     diag::DiagnosticEngine diagnostics(sources);
     linker::Linker linker(diagnostics);
     Linked result;
-    std::expected<executable::Executable, std::string> executable =
-        linker.link(objects, options);
+    std::expected<executable::Executable, std::string> executable = linker.link(objects, options);
     if (executable.has_value()) {
         result.ok = true;
         result.executable = std::move(*executable);
@@ -91,8 +89,7 @@ inline Linked link(std::span<const object::ObjectFile> objects,
 }
 
 /// Assembles and links one source file.
-inline Linked build(std::string_view source,
-                    optimizer::OptLevel level = optimizer::OptLevel::O0) {
+inline Linked build(std::string_view source, optimizer::OptLevel level = optimizer::OptLevel::O0) {
     const Assembled assembled = assemble(source, level);
     if (!assembled.ok) {
         Linked failed;
@@ -108,8 +105,7 @@ inline Linked buildAll(std::span<const std::string_view> sources,
                        optimizer::OptLevel level = optimizer::OptLevel::O0) {
     std::vector<object::ObjectFile> objects;
     for (std::size_t i = 0; i < sources.size(); ++i) {
-        const Assembled assembled =
-            assemble(sources[i], level, std::format("unit{}.asm", i));
+        const Assembled assembled = assemble(sources[i], level, std::format("unit{}.asm", i));
         if (!assembled.ok) {
             Linked failed;
             failed.error = assembled.error + assembled.diagnostics;
@@ -161,8 +157,7 @@ inline Ran run(const executable::Executable& executable, std::string_view input 
 }
 
 /// Source in, execution out — the whole toolchain in one call.
-inline Ran runSource(std::string_view source,
-                     optimizer::OptLevel level = optimizer::OptLevel::O0,
+inline Ran runSource(std::string_view source, optimizer::OptLevel level = optimizer::OptLevel::O0,
                      std::string_view input = {}) {
     const Linked linked = build(source, level);
     if (!linked.ok) {

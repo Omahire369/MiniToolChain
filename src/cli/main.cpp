@@ -30,8 +30,8 @@
 
 namespace {
 
-using minitool::io::println;
 using minitool::u64;
+using minitool::io::println;
 
 constexpr std::string_view kVersion = "1.0.0";
 
@@ -135,8 +135,7 @@ Arguments parseArguments(std::span<const std::string_view> args) {
         } else if (arg == "--no-bytes") {
             parsed.show_bytes = false;
         } else if (arg == "--port") {
-            if (!parseU64(next("--port"), parsed.port) || parsed.port == 0 ||
-                parsed.port > 65535) {
+            if (!parseU64(next("--port"), parsed.port) || parsed.port == 0 || parsed.port > 65535) {
                 parsed.error = "--port needs a number between 1 and 65535";
             }
         } else if (arg == "--host") {
@@ -164,9 +163,9 @@ std::optional<minitool::AssembleResult> assembleFile(const std::filesystem::path
         return std::nullopt;
     }
     minitool::SourceManager sources;
-    const minitool::FileId file = sources.addFile(
-        path.generic_string(),
-        std::string(reinterpret_cast<const char*>(bytes->data()), bytes->size()));
+    const minitool::FileId file =
+        sources.addFile(path.generic_string(),
+                        std::string(reinterpret_cast<const char*>(bytes->data()), bytes->size()));
 
     minitool::diag::DiagnosticEngine diagnostics(sources);
     minitool::AssembleOptions options;
@@ -185,8 +184,7 @@ std::optional<minitool::AssembleResult> assembleFile(const std::filesystem::path
     }
     if (arguments.stats) {
         println(stderr, "{}: {} {}", path.string(),
-                minitool::optimizer::optLevelName(arguments.opt_level),
-                result->stats.summary());
+                minitool::optimizer::optLevelName(arguments.opt_level), result->stats.summary());
     }
     return std::move(*result);
 }
@@ -208,8 +206,8 @@ int cmdIsa() {
                 minitool::isa::formatName(info.format), notes);
     }
     println();
-    println("{} instructions, {} bytes each, little-endian",
-            minitool::isa::allOpcodes().size(), minitool::isa::kInstructionSize);
+    println("{} instructions, {} bytes each, little-endian", minitool::isa::allOpcodes().size(),
+            minitool::isa::kInstructionSize);
     return 0;
 }
 
@@ -221,8 +219,7 @@ int cmdDecode(std::string_view text) {
     u64 word = 0;
     const std::from_chars_result result =
         std::from_chars(digits.data(), digits.data() + digits.size(), word, 16);
-    if (digits.empty() || result.ec != std::errc{} ||
-        result.ptr != digits.data() + digits.size()) {
+    if (digits.empty() || result.ec != std::errc{} || result.ptr != digits.data() + digits.size()) {
         println(stderr, "error: '{}' is not a 64-bit hexadecimal word", text);
         return kToolError;
     }
@@ -346,8 +343,7 @@ int cmdRun(const Arguments& arguments) {
     if (!result.ok()) {
         println(stderr, "runtime error: {}", minitool::vm::vmErrorName(result.error));
         println(stderr, "  {}", result.message);
-        println(stderr, "  PC = 0x{:016X}, after {} instructions", result.pc,
-                result.instructions);
+        println(stderr, "  PC = 0x{:016X}, after {} instructions", result.pc, result.instructions);
         return kToolError;
     }
     if (arguments.stats) {
@@ -453,8 +449,7 @@ int cmdObjdump(const Arguments& arguments) {
     for (const minitool::object::Relocation& relocation : object->relocations) {
         println("  {:<8} section {} + 0x{:<6X} -> {} {:+}",
                 minitool::object::relocationTypeName(relocation.type), relocation.section,
-                relocation.offset, object->symbols.at(relocation.symbol).name,
-                relocation.addend);
+                relocation.offset, object->symbols.at(relocation.symbol).name, relocation.addend);
     }
     if (!object->debug_info.empty()) {
         println();
@@ -535,8 +530,8 @@ int cmdBench(const Arguments& arguments) {
     }
     const auto elapsed = Clock::now() - start;
     const double seconds = std::chrono::duration<double>(elapsed).count();
-    println("assembled {} instructions in {:.3f} s ({:.0f} instructions/s)", instructions,
-            seconds, seconds > 0 ? static_cast<double>(instructions) / seconds : 0.0);
+    println("assembled {} instructions in {:.3f} s ({:.0f} instructions/s)", instructions, seconds,
+            seconds > 0 ? static_cast<double>(instructions) / seconds : 0.0);
     println("(see benchmarks/ for the full suite)");
     return 0;
 }

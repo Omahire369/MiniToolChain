@@ -111,8 +111,7 @@ TEST(Executable, ValidateRejectsOverlappingSegments) {
 
 TEST(Executable, ValidateRejectsWritableExecutableMemory) {
     Executable executable = sampleExecutable();
-    executable.segments[0].flags =
-        SegmentFlags::Read | SegmentFlags::Write | SegmentFlags::Exec;
+    executable.segments[0].flags = SegmentFlags::Read | SegmentFlags::Write | SegmentFlags::Exec;
     EXPECT_FALSE(validate(executable).has_value());
 }
 

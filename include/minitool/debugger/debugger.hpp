@@ -63,16 +63,12 @@ class Debugger {
     std::optional<u32> addBreakpointBySymbol(std::string_view name);
     bool removeBreakpoint(u32 id);
     bool setBreakpointEnabled(u32 id, bool enabled);
-    [[nodiscard]] std::span<const Breakpoint> breakpoints() const noexcept {
-        return breakpoints_;
-    }
+    [[nodiscard]] std::span<const Breakpoint> breakpoints() const noexcept { return breakpoints_; }
 
     /// Watchpoints report when the 8 bytes at an address change.
     std::optional<u32> addWatchpoint(u64 address);
     bool removeWatchpoint(u32 id);
-    [[nodiscard]] std::span<const Watchpoint> watchpoints() const noexcept {
-        return watchpoints_;
-    }
+    [[nodiscard]] std::span<const Watchpoint> watchpoints() const noexcept { return watchpoints_; }
 
     // --- execution ---------------------------------------------------------
     /// Runs until a breakpoint, a watchpoint, a fault, or the program halts.

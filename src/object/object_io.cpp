@@ -132,17 +132,17 @@ std::expected<void, std::string> writeObjectToBuffer(const ObjectFile& object,
 
     // The checksum covers everything after the header, so it is stable under
     // the header patching above.
-    const u32 checksum =
-        crc32(std::span<const u8>{buffer}.subspan(kObjectHeaderSize));
+    const u32 checksum = crc32(std::span<const u8>{buffer}.subspan(kObjectHeaderSize));
     byteorder::store<u32>(std::span<u8>{buffer}.subspan(kChecksumField, sizeof(u32)), checksum);
     return {};
 }
 
 std::expected<ObjectFile, std::string> readObjectFromBuffer(std::span<const u8> buffer) {
     if (buffer.size() < kObjectHeaderSize) {
-        return std::unexpected(std::format("not an object file: {} bytes is shorter than the {}"
-                                           "-byte header",
-                                           buffer.size(), kObjectHeaderSize));
+        return std::unexpected(
+            std::format("not an object file: {} bytes is shorter than the {}"
+                        "-byte header",
+                        buffer.size(), kObjectHeaderSize));
     }
     binary::Reader reader(buffer);
     const std::expected<std::span<const u8>, std::string> magic = reader.raw(kObjectMagic.size());
@@ -176,12 +176,10 @@ std::expected<ObjectFile, std::string> readObjectFromBuffer(std::span<const u8> 
 
     if (*version != kObjectVersion) {
         return std::unexpected(std::format(
-            "unsupported object version {} (this build understands {})", *version,
-            kObjectVersion));
+            "unsupported object version {} (this build understands {})", *version, kObjectVersion));
     }
     if (*header_size != kObjectHeaderSize) {
-        return std::unexpected(
-            std::format("unsupported object header size {}", *header_size));
+        return std::unexpected(std::format("unsupported object header size {}", *header_size));
     }
     if (*flags != 0) {
         // The field is reserved. Rejecting a non-zero value keeps the door open
@@ -190,14 +188,14 @@ std::expected<ObjectFile, std::string> readObjectFromBuffer(std::span<const u8> 
         return std::unexpected(std::format("unknown object flags 0x{:08X}", *flags));
     }
     if (*file_size != buffer.size()) {
-        return std::unexpected(std::format(
-            "object claims to be {} bytes but is {}", *file_size, buffer.size()));
+        return std::unexpected(
+            std::format("object claims to be {} bytes but is {}", *file_size, buffer.size()));
     }
     const u32 actual = crc32(buffer.subspan(kObjectHeaderSize));
     if (actual != *checksum) {
-        return std::unexpected(std::format(
-            "object checksum mismatch: header says 0x{:08X}, contents hash to 0x{:08X}",
-            *checksum, actual));
+        return std::unexpected(
+            std::format("object checksum mismatch: header says 0x{:08X}, contents hash to 0x{:08X}",
+                        *checksum, actual));
     }
 
     // Table extents: each is validated against the file before it is read.
@@ -213,9 +211,8 @@ std::expected<ObjectFile, std::string> readObjectFromBuffer(std::span<const u8> 
         return std::unexpected(std::string{"object table layout is inconsistent"});
     }
 
-    const std::expected<std::span<const u8>, std::string> string_table =
-        reader.rawAt(static_cast<std::size_t>(*string_offset),
-                     static_cast<std::size_t>(*string_size));
+    const std::expected<std::span<const u8>, std::string> string_table = reader.rawAt(
+        static_cast<std::size_t>(*string_offset), static_cast<std::size_t>(*string_size));
     if (!string_table.has_value()) {
         return std::unexpected(string_table.error());
     }
@@ -251,12 +248,12 @@ std::expected<ObjectFile, std::string> readObjectFromBuffer(std::span<const u8> 
                 std::format("section alignment {} is not a power of two", *alignment));
         }
         if (*data_offset > blob.size() || *data_size > blob.size() - *data_offset) {
-            return std::unexpected(outOfRange("section data range", *data_offset + *data_size,
-                                              blob.size()));
+            return std::unexpected(
+                outOfRange("section data range", *data_offset + *data_size, blob.size()));
         }
         if (*memory_size < *data_size) {
-            return std::unexpected(std::string{
-                "section memory size is smaller than its initialised data"});
+            return std::unexpected(
+                std::string{"section memory size is smaller than its initialised data"});
         }
         const std::expected<std::string, std::string> name =
             binary::readString(*string_table, *name_offset);
@@ -267,9 +264,8 @@ std::expected<ObjectFile, std::string> readObjectFromBuffer(std::span<const u8> 
         section.type = static_cast<SectionType>(*type);
         section.flags = static_cast<SectionFlags>(*section_flags);
         section.alignment = *alignment;
-        const std::span<const u8> data =
-            blob.subspan(static_cast<std::size_t>(*data_offset),
-                         static_cast<std::size_t>(*data_size));
+        const std::span<const u8> data = blob.subspan(static_cast<std::size_t>(*data_offset),
+                                                      static_cast<std::size_t>(*data_size));
         section.data.assign(data.begin(), data.end());
         section.size = *memory_size;
         section.index = *index;
@@ -349,9 +345,9 @@ std::expected<ObjectFile, std::string> readObjectFromBuffer(std::span<const u8> 
         const Section& target = object.sections[*section_index];
         const u64 width = relocationWidth(static_cast<RelocationType>(*type));
         if (*offset > target.data.size() || width > target.data.size() - *offset) {
-            return std::unexpected(std::format(
-                "relocation at offset {} does not fit in section '{}' ({} bytes)", *offset,
-                target.name, target.data.size()));
+            return std::unexpected(
+                std::format("relocation at offset {} does not fit in section '{}' ({} bytes)",
+                            *offset, target.name, target.data.size()));
         }
         Relocation relocation;
         relocation.section = *section_index;

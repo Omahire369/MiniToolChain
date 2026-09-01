@@ -69,8 +69,8 @@ TEST(Disassembler, ResolvesBranchTargetsToAddresses) {
 }
 
 TEST(Disassembler, NamesSymbolsWhenItCan) {
-    const testkit::Linked linked = testkit::build(
-        ".global _start\n_start:\n    CALL helper\n    HALT\nhelper:\n    RET\n");
+    const testkit::Linked linked =
+        testkit::build(".global _start\n_start:\n    CALL helper\n    HALT\nhelper:\n    RET\n");
     ASSERT_TRUE(linked.ok) << linked.error;
     const std::string text = Disassembler{}.disassemble(linked.executable);
     EXPECT_TRUE(contains(text, "<_start>:"));
@@ -80,8 +80,8 @@ TEST(Disassembler, NamesSymbolsWhenItCan) {
 }
 
 TEST(Disassembler, ShowsAnOffsetIntoASymbol) {
-    const testkit::Linked linked = testkit::build(
-        ".global _start\n_start:\n    NOP\n    JMP _start\n    HALT\n");
+    const testkit::Linked linked =
+        testkit::build(".global _start\n_start:\n    NOP\n    JMP _start\n    HALT\n");
     ASSERT_TRUE(linked.ok) << linked.error;
     const std::string text = Disassembler{}.disassemble(linked.executable);
     EXPECT_TRUE(contains(text, "_start (0x"));

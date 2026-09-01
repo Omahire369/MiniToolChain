@@ -35,8 +35,8 @@ TEST(Linker, LinksASingleObject) {
     EXPECT_EQ(linked.executable.entry_point, linker::kTextBase);
     ASSERT_EQ(linked.executable.segments.size(), 1U);
     EXPECT_EQ(linked.executable.segments[0].name, ".text");
-    EXPECT_TRUE(executable::hasFlag(linked.executable.segments[0].flags,
-                                    executable::SegmentFlags::Exec));
+    EXPECT_TRUE(
+        executable::hasFlag(linked.executable.segments[0].flags, executable::SegmentFlags::Exec));
 }
 
 TEST(Linker, ResolvesSymbolsAcrossObjects) {
@@ -80,10 +80,10 @@ TEST(Linker, PlacesEachSectionInItsOwnRegion) {
     EXPECT_EQ(linked.executable.segments[3].virtual_size, 16U);
     EXPECT_TRUE(linked.executable.segments[3].data.empty());
     // .rodata must not be writable, .data must not be executable.
-    EXPECT_FALSE(executable::hasFlag(linked.executable.segments[1].flags,
-                                     executable::SegmentFlags::Write));
-    EXPECT_FALSE(executable::hasFlag(linked.executable.segments[2].flags,
-                                     executable::SegmentFlags::Exec));
+    EXPECT_FALSE(
+        executable::hasFlag(linked.executable.segments[1].flags, executable::SegmentFlags::Write));
+    EXPECT_FALSE(
+        executable::hasFlag(linked.executable.segments[2].flags, executable::SegmentFlags::Exec));
 }
 
 TEST(Linker, PatchesDataRelocationsToFinalAddresses) {
@@ -116,8 +116,7 @@ TEST(Linker, RejectsDuplicateGlobalDefinitions) {
 TEST(Linker, LetsAStrongDefinitionOverrideAWeakOne) {
     constexpr std::string_view kWeak = ".weak thing\nthing:\n    MOVI R1, 1\n    RET\n";
     constexpr std::string_view kStrong = ".global thing\nthing:\n    MOVI R1, 2\n    RET\n";
-    constexpr std::string_view kMainProgram =
-        ".global _start\n_start:\n    CALL thing\n    HALT\n";
+    constexpr std::string_view kMainProgram = ".global _start\n_start:\n    CALL thing\n    HALT\n";
     const std::array<std::string_view, 3> sources{kMainProgram, kWeak, kStrong};
     const testkit::Linked linked = testkit::buildAll(sources);
     ASSERT_TRUE(linked.ok) << linked.error;
@@ -145,8 +144,7 @@ TEST(Linker, RequiresAnEntryPoint) {
 }
 
 TEST(Linker, HonoursACustomEntryPoint) {
-    const testkit::Assembled assembled =
-        testkit::assemble(".global begin\nbegin:\n    HALT\n");
+    const testkit::Assembled assembled = testkit::assemble(".global begin\nbegin:\n    HALT\n");
     ASSERT_TRUE(assembled.ok);
     const std::vector<object::ObjectFile> objects{assembled.object};
     linker::LinkOptions options;
@@ -181,8 +179,7 @@ TEST(Linker, ExportsSymbolsSortedByAddress) {
     const testkit::Linked linked = testkit::buildAll(sources);
     ASSERT_TRUE(linked.ok) << linked.error;
     for (std::size_t i = 1; i < linked.executable.symbols.size(); ++i) {
-        EXPECT_LE(linked.executable.symbols[i - 1].address,
-                  linked.executable.symbols[i].address);
+        EXPECT_LE(linked.executable.symbols[i - 1].address, linked.executable.symbols[i].address);
     }
 }
 

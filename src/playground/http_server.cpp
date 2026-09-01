@@ -42,12 +42,16 @@ namespace {
 #ifdef _WIN32
 using Socket = SOCKET;
 constexpr Socket kInvalidSocket = INVALID_SOCKET;
-void closeSocket(Socket socket) { ::closesocket(socket); }
+void closeSocket(Socket socket) {
+    ::closesocket(socket);
+}
 using SendSize = int;
 #else
 using Socket = int;
 constexpr Socket kInvalidSocket = -1;
-void closeSocket(Socket socket) { ::close(socket); }
+void closeSocket(Socket socket) {
+    ::close(socket);
+}
 using SendSize = std::size_t;
 #endif
 
@@ -366,8 +370,8 @@ bool readRequest(Socket socket, std::string& request) {
 void sendAll(Socket socket, std::string_view data) {
     std::size_t sent = 0;
     while (sent < data.size()) {
-        const auto written = ::send(socket, data.data() + sent,
-                                    static_cast<SendSize>(data.size() - sent), 0);
+        const auto written =
+            ::send(socket, data.data() + sent, static_cast<SendSize>(data.size() - sent), 0);
         if (written <= 0) {
             return;
         }
@@ -383,8 +387,7 @@ void sendResponse(Socket socket, const HttpResponse& response) {
         "Cache-Control: no-store\r\n"
         "Connection: close\r\n"
         "\r\n",
-        response.status, statusText(response.status), response.content_type,
-        response.body.size());
+        response.status, statusText(response.status), response.content_type, response.body.size());
     sendAll(socket, head);
     sendAll(socket, response.body);
 }
@@ -414,8 +417,8 @@ HttpResponse handleRequest(std::string_view method, std::string_view target,
         RunRequest request;
         request.source = std::string{body};
         request.input = queryValue(query, "stdin");
-        request.opt_level = queryValue(query, "opt") == "1" ? optimizer::OptLevel::O1
-                                                            : optimizer::OptLevel::O0;
+        request.opt_level =
+            queryValue(query, "opt") == "1" ? optimizer::OptLevel::O1 : optimizer::OptLevel::O0;
 
         const RunReport report = runSource(request);
         return {200, "application/json; charset=utf-8", toJson(report)};
@@ -495,9 +498,9 @@ int serve(const ServeOptions& options) {
 
         const std::string_view line{request.data(), line_end};
         const std::size_t first_space = line.find(' ');
-        const std::size_t second_space =
-            first_space == std::string_view::npos ? std::string_view::npos
-                                                  : line.find(' ', first_space + 1);
+        const std::size_t second_space = first_space == std::string_view::npos
+                                             ? std::string_view::npos
+                                             : line.find(' ', first_space + 1);
         if (first_space == std::string_view::npos || second_space == std::string_view::npos) {
             sendResponse(client, {400, "text/plain; charset=utf-8", "bad request line\n"});
             closeSocket(client);
