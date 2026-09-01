@@ -135,49 +135,118 @@ Useful flags: `-O0` / `-O1`, `-g` / `-gno`, `--entry <name>`, `--trace`,
 
 ## The pipeline
 
-```
-   source.asm
-       |
-       v
-   [ lexer ]        text        -> tokens, with source locations
-       |
-       v
-   [ parser ]       tokens      -> AST          (syntax only)
-       |
-       v
-   [ sema ]         AST         -> AST          (validated against the ISA)
-       |
-       v
-   [ lowering ]     AST         -> IR           (sections, symbolic operands)
-       |
-       v
-   [ optimizer ]    IR          -> IR           (addressless: safe to rewrite)
-       |
-       v
-   [ assembler ]    IR          -> object       (layout, then encode)
-       |
-       v
-    main.mobj  +  util.mobj
-       |
-       v
-   [ linker ]       objects     -> executable   (merge, resolve, relocate)
-       |
-       v
-    program.mexe
-       |
-       +-------------------+
-       |                   |
-       v                   v
-   [ loader ]         [ disassembler ]
-       |
-       v
-   [ virtual CPU ] <---- [ debugger ]
+Source text goes in one end and a running program comes out the other.
+Every box is a separate module, and every arrow is a data structure you
+can inspect with the CLI.
+
+```mermaid
+flowchart TD
+    SRC["source.asm"]
+
+    subgraph FE["Front end"]
+        direction TB
+        LEX["<b>lexer</b><br/>text to tokens<br/>every token carries line:column"]
+        PAR["<b>parser</b><br/>tokens to AST<br/>syntax only, 3-token lookahead"]
+        SEM["<b>sema</b><br/>AST to AST<br/>checked against the ISA"]
+        LOW["<b>lowering</b><br/>AST to IR<br/>sections and symbolic operands"]
+    end
+
+    OPT["<b>optimizer</b><br/>IR to IR<br/>addressless, so deleting is safe"]
+
+    subgraph BE["Back end"]
+        direction TB
+        ASM["<b>assembler</b><br/>IR to object<br/>pass 1 lays out, pass 2 encodes"]
+        LNK["<b>linker</b><br/>objects to executable<br/>merge, resolve, relocate"]
+    end
+
+    OBJ["main.mobj + util.mobj"]
+    EXE["program.mexe"]
+
+    LOAD["<b>loader</b><br/>validate and map segments"]
+    CPU["<b>virtual CPU</b><br/>fetch, decode, execute"]
+    DIS["<b>disassembler</b>"]
+    DBG["<b>debugger</b>"]
+
+    SRC --> LEX --> PAR --> SEM --> LOW --> OPT --> ASM --> OBJ --> LNK --> EXE
+    EXE --> LOAD --> CPU
+    EXE --> DIS
+    DBG -. drives .-> CPU
+
+    style SRC fill:#1f2937,stroke:#60a5fa,color:#e5e7eb
+    style OBJ fill:#1f2937,stroke:#60a5fa,color:#e5e7eb
+    style EXE fill:#1f2937,stroke:#60a5fa,color:#e5e7eb
+    style DIS fill:#312e35,stroke:#c084fc,color:#e5e7eb
+    style DBG fill:#312e35,stroke:#c084fc,color:#e5e7eb
 ```
 
 Two pieces of code are shared on purpose, because a second copy would be
 free to disagree: `isa::decode` (used by the assembler, disassembler,
 relocation engine and VM) and `isa::evaluateBinary` (used by the VM's
 execute step *and* the optimizer's constant folder).
+
+### How one line becomes an instruction
+
+Following `MUL R2, R1` from `examples/factorial.asm` through every stage.
+The addresses and the encoding below are the real ones — check them with
+`minitool decode 2221000000000000`.
+
+```mermaid
+flowchart TD
+    A["MUL  R2, R1        ; acc *= n"]
+
+    A --> B["<b>lexer</b>"]
+    B --> B1["IDENT 'MUL' &nbsp; REG R2 &nbsp; COMMA &nbsp; REG R1 &nbsp; COMMENT<br/>each with a source location"]
+
+    B1 --> C["<b>parser</b>"]
+    C --> C1["InstructionNode<br/>mnemonic = MUL<br/>operands = Register R2, Register R1"]
+
+    C1 --> D["<b>sema</b>"]
+    D --> D1{"MUL is format reg2.<br/>Exactly two register operands?"}
+    D1 -->|no| DERR["diagnostic with a caret,<br/>compilation stops"]
+    D1 -->|yes| E["<b>lowering</b>"]
+
+    E --> E1["ir::Instruction<br/>opcode MUL, dst R2, src R1<br/>no address yet"]
+
+    E1 --> F["<b>optimizer</b> at -O1"]
+    F --> F1{"Both operands known,<br/>and are the flags dead?"}
+    F1 -->|yes| F2["fold to a MOVI"]
+    F1 -->|no| F3["keep as written"]
+
+    F2 --> G["<b>assembler</b>"]
+    F3 --> G
+    G --> G1["pass 1: this lands at offset 0x50<br/>pass 2: encode the word"]
+    G1 --> G2["0x2221000000000000<br/>opcode 0x22, dst 2, src 1, immediate 0"]
+
+    G2 --> H["<b>linker</b>"]
+    H --> H1["offset 0x50 + text base 0x10000<br/>= 0x0000000000010050"]
+
+    style DERR fill:#3f1d2b,stroke:#f87171,color:#fecaca
+    style G2 fill:#14312a,stroke:#34d399,color:#d1fae5
+```
+
+A symbol operand needs one extra step. The assembler cannot know the
+address yet, so it emits a **relocation** and leaves the field zero; the
+linker patches it once every section has an address.
+
+```mermaid
+flowchart TD
+    A["CALL factorial"] --> B["<b>assembler</b>"]
+    B --> C["0x5700000000000000<br/>immediate left at zero"]
+    B --> D["relocation<br/>type PCREL48, offset 0x08<br/>symbol 'factorial'"]
+    C --> E["<b>linker</b>"]
+    D --> E
+    E --> F["factorial resolves to 0x10020.<br/>The CALL sits at 0x10008, so the<br/>displacement is 0x10020 - (0x10008 + 8) = 0x10"]
+    F --> G["0x5700000000000010"]
+
+    style G fill:#14312a,stroke:#34d399,color:#d1fae5
+```
+
+That `+ 8` is why relocation gets a document of its own: a branch is
+relative to the instruction *after* it. The linker and the VM agree about
+that because both call `isa::branchDisplacement` rather than each doing
+the arithmetic themselves.
+See [relocation.md](docs/relocation.md) and
+[ADR-007](docs/adr/ADR-007-relocation-model.md).
 
 ## The ISA
 

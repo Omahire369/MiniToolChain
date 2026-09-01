@@ -198,6 +198,29 @@ TEST(PlaygroundHttp, ServesThePage) {
     EXPECT_NE(response.body.find("MiniToolchain"), std::string::npos);
 }
 
+TEST(PlaygroundHttp, ThePageIsWholeAndCarriesEveryExample) {
+    // The page is assembled from several string literals, because MSVC caps a
+    // single one at 16380 bytes. A dropped or mis-ordered chunk would truncate
+    // the page silently -- it would still be served, still be valid-looking
+    // HTML at the top, and simply stop working. These assertions are what
+    // notice that.
+    const std::string page = handleRequest("GET", "/", "").body;
+    EXPECT_TRUE(page.starts_with("<!doctype html>"));
+    EXPECT_NE(page.find("</html>"), std::string::npos) << "page is truncated";
+    EXPECT_NE(page.find("</script>"), std::string::npos);
+
+    // Every entry the dropdown offers must actually be present.
+    for (const std::string_view name :
+         {"Hello, World!", "Arithmetic", "Bitwise and shifts",
+          "Conditionals and jumps", "The stack", "Factorial (loops)",
+          "Fibonacci (recursion)", "Arrays in memory", "Print a number",
+          "Echo (reads stdin)", "Heap allocation", "Optimizer (try -O0 vs -O1)",
+          "Error: bad operand", "Error: divide by zero",
+          "Error: read-only memory"}) {
+        EXPECT_NE(page.find(name), std::string::npos) << "missing example: " << name;
+    }
+}
+
 TEST(PlaygroundHttp, RejectsTheWrongMethod) {
     EXPECT_EQ(handleRequest("POST", "/", "").status, 405);
     EXPECT_EQ(handleRequest("GET", "/api/run", "").status, 405);
