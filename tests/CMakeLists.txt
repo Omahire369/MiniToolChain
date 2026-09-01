@@ -44,6 +44,9 @@ minitool_add_test(test_disassembler unit/test_disassembler.cpp)
 minitool_add_test(test_optimizer unit/test_optimizer.cpp)
 minitool_add_test(test_debugger unit/test_debugger.cpp)
 
+# --- V17: the browser playground --------------------------------------------
+minitool_add_test(test_playground unit/test_playground.cpp)
+
 # --- V16: integration, properties, golden files, fuzzing, failures ----------
 minitool_add_test(test_pipeline integration/test_pipeline.cpp)
 minitool_add_test(test_multi_file integration/test_multi_file.cpp)

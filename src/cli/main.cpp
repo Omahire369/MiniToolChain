@@ -25,6 +25,7 @@
 #include "minitool/isa/isa.hpp"
 #include "minitool/linker/linker.hpp"
 #include "minitool/object/object_io.hpp"
+#include "minitool/playground/http_server.hpp"
 #include "minitool/vm/vm.hpp"
 
 namespace {
@@ -56,6 +57,7 @@ int usage() {
     println("  isa                           print the instruction table");
     println("  decode <hex-word>             decode one 64-bit instruction word");
     println("  bench [iterations]            run the built-in benchmarks");
+    println("  serve                         open the playground UI in a browser");
     println("  version                       print the version");
     println();
     println("options:");
@@ -67,6 +69,8 @@ int usage() {
     println("  --max-instructions <n>   stop a run after n instructions");
     println("  --stats          report what the optimizer did");
     println("  -x <command>     run a debugger command before going interactive");
+    println("  --port <n>       port for `serve` (default 8080)");
+    println("  --host <addr>    bind address for `serve` (default 127.0.0.1)");
     return kUsageError;
 }
 
@@ -83,6 +87,8 @@ struct Arguments {
     bool stats = false;
     bool show_bytes = true;
     u64 max_instructions = minitool::vm::VirtualMachine::kDefaultBudget;
+    u64 port = 8080;
+    std::string host = "127.0.0.1";
     std::string error;
 };
 
@@ -128,6 +134,13 @@ Arguments parseArguments(std::span<const std::string_view> args) {
             parsed.stats = true;
         } else if (arg == "--no-bytes") {
             parsed.show_bytes = false;
+        } else if (arg == "--port") {
+            if (!parseU64(next("--port"), parsed.port) || parsed.port == 0 ||
+                parsed.port > 65535) {
+                parsed.error = "--port needs a number between 1 and 65535";
+            }
+        } else if (arg == "--host") {
+            parsed.host = std::string{next("--host")};
         } else if (arg == "--max-instructions") {
             if (!parseU64(next("--max-instructions"), parsed.max_instructions)) {
                 parsed.error = "--max-instructions needs a number";
@@ -581,6 +594,12 @@ int main(int argc, char** argv) {
     }
     if (command == "bench") {
         return cmdBench(arguments);
+    }
+    if (command == "serve") {
+        minitool::playground::ServeOptions options;
+        options.port = static_cast<minitool::u16>(arguments.port);
+        options.host = arguments.host;
+        return minitool::playground::serve(options);
     }
     if (command == "help" || command == "--help" || command == "-h") {
         static_cast<void>(usage());

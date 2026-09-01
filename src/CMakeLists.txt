@@ -28,10 +28,18 @@ add_library(minitool_core
     vm/syscall.cpp
     vm/vm.cpp
     disassembler/disassembler.cpp
-    debugger/debugger.cpp)
+    debugger/debugger.cpp
+    playground/session.cpp
+    playground/http_server.cpp)
 add_library(minitool::core ALIAS minitool_core)
 
 target_link_libraries(minitool_core PUBLIC minitool_options)
+# `minitool serve` uses BSD sockets; on Windows those live in ws2_32. The
+# source also carries a #pragma comment(lib) for MSVC, but naming it here keeps
+# the dependency correct for clang-cl and MinGW too.
+if(WIN32)
+    target_link_libraries(minitool_core PUBLIC ws2_32)
+endif()
 target_include_directories(minitool_core PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>)
 

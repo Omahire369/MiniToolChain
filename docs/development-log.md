@@ -5,6 +5,67 @@ lesson.
 
 ---
 
+## 2026-09-01 — The playground reported link errors twice
+
+**Problem.** A program with no `_start` produced a report whose
+`diagnostics` said `error: entry point '_start' is not defined in any
+object` and whose `error` field said exactly the same sentence. The UI
+renders those as two separate blocks under two different headings, so
+the page showed the same failure twice.
+
+**Cause.** The linker reports through the `DiagnosticEngine` *and*
+returns the reason in its `std::expected` error. The session copied both
+into the report without noticing they were the same text. The assembler
+does not behave this way — its returned error is a stage summary
+("semantic analysis failed") that complements the caret diagnostic
+rather than repeating it — so the pattern looked correct where it was
+written and only duplicated one stage later.
+
+**Detection.** Exercising the four failure stages against the running
+server by hand, before writing the UI. Not by a test: every assertion
+worth writing at that point was about *whether* the error appeared, and
+it did — twice.
+
+**Fix.** `setError` in `session.cpp` skips the headline error when the
+rendered diagnostics already contain that text.
+
+**Regression test.**
+`Playground.ReportsALinkErrorWithoutRepeatingItself` asserts the
+diagnostics carry the message and that `error` is empty.
+
+**Lesson.** Two components each reporting a failure correctly can still
+compose into a wrong result. "Did the error appear?" is the assertion
+that passes either way; "how many times?" is the one that catches this.
+Aggregating layers need tests about the shape of what they aggregate,
+not just its presence.
+
+---
+
+## 2026-09-01 — MSVC failed to load its own front end
+
+**Problem.** A full build under `pwsh` died with
+`cl : Command line error D8027 : cannot execute
+'...\HostX64d\c1xx.dll'`. The identical command had just succeeded
+under `powershell`, and succeeded again on retry.
+
+**Cause.** Environmental, not in the project: the compiler could not load
+`c1xx.dll`, which on this machine is a repository living in a
+OneDrive-synced directory with antivirus scanning it. Nothing in the
+toolchain or the build script was involved.
+
+**Detection.** A clean rebuild, immediately after another clean rebuild.
+
+**Fix.** None applied. It is recorded here so the next person who sees it
+does not go looking for a build-script bug.
+
+**Regression test.** None possible.
+
+**Lesson.** Worth stating plainly because the instinct is to debug it: a
+failure that does not reproduce on an unchanged input is evidence about
+the environment, not about the code. Retry once before investigating.
+
+---
+
 ## 2026-08-30 — `-Wsign-conversion` fired only in the UBSan build
 
 **Problem.** `byteorder::store<u16>` compiled cleanly in the Debug preset

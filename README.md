@@ -59,6 +59,7 @@ PC=0x0000000000010010  ADD R1, R2
 - [Binary formats](#binary-formats)
 - [The optimizer](#the-optimizer)
 - [The debugger](#the-debugger)
+- [The playground](#the-playground)
 - [Testing](#testing)
 - [Performance](#performance)
 - [Documentation](#documentation)
@@ -83,8 +84,9 @@ PC=0x0000000000010010  ADD R1, R2
 | **Disassembler** | Shares the VM's decoder, so it cannot lie about what will run |
 | **Debugger** | Breakpoints, watchpoints, stepping, backtraces, source mapping |
 | **Diagnostics** | Carets, notes, stable error codes, recovery |
+| **Playground** | A browser UI that drives the real pipeline over a local socket |
 
-About 9,500 lines of implementation and 6,000 of tests: 334 test cases
+About 11,000 lines of implementation and 6,300 of tests: 357 test cases
 across unit, integration, golden, property, fuzz and failure suites.
 
 ## Building
@@ -124,10 +126,12 @@ minitool verify  <exe>                 validate an executable image
 minitool isa                           print the instruction table
 minitool decode  <hex-word>            decode one instruction word
 minitool bench                         built-in benchmark
+minitool serve                         browser playground on 127.0.0.1:8080
 ```
 
 Useful flags: `-O0` / `-O1`, `-g` / `-gno`, `--entry <name>`, `--trace`,
-`--stats`, `--max-instructions <n>`, `-x <debugger command>`.
+`--stats`, `--max-instructions <n>`, `-x <debugger command>`,
+`--port <n>` / `--host <addr>`.
 
 ## The pipeline
 
@@ -261,10 +265,35 @@ the program image, so nothing it does can change what the program computes.
 
 [docs/debugger.md](docs/debugger.md)
 
+## The playground
+
+```console
+$ minitool serve
+minitool playground on http://127.0.0.1:8080/  (Ctrl+C to stop)
+```
+
+Type assembly on the left, press **Run**, and get the program's output,
+its diagnostics with carets, the disassembly of the linked image and the
+final register state — from the same pipeline `minitool build` uses.
+
+The browser only draws. Compiling in JavaScript would mean a second
+assembler and VM, free to disagree with the C++ ones and certain to
+eventually; WebAssembly would mean adding Emscripten as the project's
+only build dependency. So the page posts source to a small local server
+and renders what the real toolchain says.
+
+It binds to loopback, because the endpoint compiles and runs submitted
+code. Source size, request size, output size and the instruction budget
+are all capped, and the program itself runs in the same sandboxed VM as
+everything else.
+
+[docs/playground.md](docs/playground.md) ·
+[ADR-012](docs/adr/ADR-012-playground-architecture.md)
+
 ## Testing
 
 ```bash
-pwsh tools/build.ps1          # 334 cases, 28 binaries
+pwsh tools/build.ps1          # 357 cases, 29 binaries
 ```
 
 | Layer | Proves |
@@ -313,11 +342,12 @@ because the profile does not justify them.
 | [optimizer.md](docs/optimizer.md) | The passes and their preconditions |
 | [vm.md](docs/vm.md) | The machine and its runtime errors |
 | [debugger.md](docs/debugger.md) | Commands and how they work |
+| [playground.md](docs/playground.md) | The browser UI, its limits and its JSON contract |
 | [diagnostics.md](docs/diagnostics.md) | Error codes and recovery |
 | [testing.md](docs/testing.md) | The strategy behind the suite |
 | [performance.md](docs/performance.md) | Measurements, with their context |
 | [development-log.md](docs/development-log.md) | Every real bug: cause, detection, fix, lesson |
-| [adr/](docs/adr/) | Eleven decisions, with alternatives and trade-offs |
+| [adr/](docs/adr/) | Twelve decisions, with alternatives and trade-offs |
 
 ## Limitations
 
