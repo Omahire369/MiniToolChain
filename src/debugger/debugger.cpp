@@ -608,7 +608,7 @@ bool Debugger::executeCommand(std::string_view line, std::ostream& out) {
 }
 
 void Debugger::interactiveLoop(std::istream& in, std::ostream& out) {
-    out << "minidbg — type 'help' for commands\n";
+    out << "minidbg - type 'help' for commands\n";
     out << formatSourceLocation(machine_.state().pc);
     out << formatDisassembly(machine_.state().pc, 1);
     std::string line;

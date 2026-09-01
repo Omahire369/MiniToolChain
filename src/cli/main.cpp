@@ -40,7 +40,7 @@ constexpr int kUsageError = 2;
 constexpr int kToolError = 1;
 
 int usage() {
-    println("minitool {} — a complete toolchain for the MiniToolchain 64-bit virtual ISA",
+    println("minitool {} - a complete toolchain for the MiniToolchain 64-bit virtual ISA",
             kVersion);
     println();
     println("usage: minitool <command> [options]");
@@ -456,7 +456,7 @@ int cmdObjdump(const Arguments& arguments) {
             continue;
         }
         println();
-        println("disassembly of {} (offsets, not addresses — this file is not linked yet):",
+        println("disassembly of {} (offsets, not addresses -- this file is not linked yet):",
                 section.name);
         const minitool::disassembler::Disassembler disassembler;
         std::fputs(disassembler.disassemble(section.data, 0).c_str(), stdout);
