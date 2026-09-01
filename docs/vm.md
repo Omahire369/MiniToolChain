@@ -41,6 +41,31 @@ Flat, byte-addressable, no paging. The layout is in
 | heap | `0x1000_0000` | `rw-` |
 | stack | `0x7FFF_0000`, growing down | `rw-` |
 
+```mermaid
+flowchart TD
+    S["<b>stack</b> &nbsp;&nbsp; rw-<br/>0x7FFF_0000, grows downward"]
+    G1["<i>unmapped</i>"]
+    H["<b>heap</b> &nbsp;&nbsp; rw-<br/>0x1000_0000, grows upward as allocate is called"]
+    G2["<i>unmapped</i>"]
+    B["<b>.bss</b> &nbsp;&nbsp; rw-<br/>0x0030_0000"]
+    D["<b>.data</b> &nbsp;&nbsp; rw-<br/>0x0020_0000"]
+    R["<b>.rodata</b> &nbsp;&nbsp; r--<br/>0x0010_0000"]
+    T["<b>.text</b> &nbsp;&nbsp; r-x<br/>0x0001_0000"]
+    Z["<b>unmapped</b><br/>0x0000_0000, so a null dereference faults"]
+
+    S --- G1 --- H --- G2 --- B --- D --- R --- T --- Z
+
+    style T fill:#1e293b,stroke:#60a5fa,color:#e5e7eb
+    style R fill:#2a2318,stroke:#e0af68,color:#f3e8d0
+    style G1 fill:#17191d,stroke:#3a3f47,color:#6b7280
+    style G2 fill:#17191d,stroke:#3a3f47,color:#6b7280
+    style Z fill:#3f1d2b,stroke:#f87171,color:#fecaca
+```
+
+High addresses at the top. The gaps are not padding — they are genuinely
+unmapped, so running off the end of one region faults instead of quietly
+arriving in the next.
+
 A region is a base, a size, a permission set and a byte vector. Every
 access is bounds- and permission-checked, and an access that starts
 inside one region and would run past its end is rejected rather than
@@ -53,16 +78,28 @@ checks `PC % 8` before fetching.
 
 ## 3. The instruction cycle
 
-```
-while (!halted) {
-    check the budget
-    check PC alignment
-    fetch      8 bytes, requiring execute permission
-    decode     isa::decode — the same function the disassembler uses
-    trace      if a sink is attached
-    advance    PC += 8, before executing
-    execute
-}
+```mermaid
+flowchart TD
+    START(["run"]) --> BUDGET{"budget<br/>exhausted?"}
+    BUDGET -->|yes| E1(["BudgetExhausted"])
+    BUDGET -->|no| ALIGN{"PC % 8 == 0?"}
+    ALIGN -->|no| E2(["MisalignedPC"])
+    ALIGN -->|yes| FETCH["<b>fetch</b> 8 bytes<br/>requires execute permission"]
+    FETCH -->|not executable| E3(["PermissionDenied"])
+    FETCH --> DECODE["<b>decode</b><br/>isa::decode, the same function<br/>the disassembler uses"]
+    DECODE -->|word does not decode| E4(["IllegalInstruction"])
+    DECODE --> TRACE["<b>trace</b>, if a sink is attached"]
+    TRACE --> ADV["<b>advance</b><br/>PC += 8, <i>before</i> executing"]
+    ADV --> EXEC["<b>execute</b><br/>ALU through isa::evaluateBinary"]
+    EXEC --> HALTED{"halted?"}
+    HALTED -->|no| BUDGET
+    HALTED -->|yes| DONE(["stop, with an exit code"])
+
+    style E1 fill:#3f1d2b,stroke:#f87171,color:#fecaca
+    style E2 fill:#3f1d2b,stroke:#f87171,color:#fecaca
+    style E3 fill:#3f1d2b,stroke:#f87171,color:#fecaca
+    style E4 fill:#3f1d2b,stroke:#f87171,color:#fecaca
+    style DONE fill:#14312a,stroke:#34d399,color:#d1fae5
 ```
 
 `PC` advances *before* execution, which is why `CALL` can push

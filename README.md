@@ -86,7 +86,7 @@ PC=0x0000000000010010  ADD R1, R2
 | **Diagnostics** | Carets, notes, stable error codes, recovery |
 | **Playground** | A browser UI that drives the real pipeline over a local socket |
 
-About 11,000 lines of implementation and 6,300 of tests: 357 test cases
+About 11,000 lines of implementation and 6,300 of tests: 358 test cases
 across unit, integration, golden, property, fuzz and failure suites.
 
 ## Building
@@ -362,7 +362,7 @@ everything else.
 ## Testing
 
 ```bash
-pwsh tools/build.ps1          # 357 cases, 29 binaries
+pwsh tools/build.ps1          # 358 cases, 29 binaries
 ```
 
 | Layer | Proves |

@@ -39,6 +39,44 @@ Each table begins immediately after the previous one. The header records
 where the string table and the blob start, and a reader checks those
 against its own computation before reading anything.
 
+The offsets above are only half the structure. The other half is the
+cross-references between the tables — every one of which is an index a
+malformed file could point anywhere, and every one of which is validated
+before use:
+
+```mermaid
+flowchart TD
+    H["<b>header</b> &nbsp; 64 bytes<br/>magic MOBJ, version, counts, offsets, CRC-32"]
+    ST["<b>section table</b><br/>section_count x 48"]
+    SY["<b>symbol table</b><br/>symbol_count x 32"]
+    RE["<b>relocation table</b><br/>reloc_count x 32"]
+    DB["<b>debug line table</b><br/>debug_count x 24"]
+    SF["<b>source file table</b><br/>source_count x 4"]
+    STR["<b>string table</b><br/>interned; offset 0 is the empty string"]
+    BLOB["<b>section data blob</b>"]
+
+    H --- ST --- SY --- RE --- DB --- SF --- STR --- BLOB
+
+    H -.->|"string_offset, blob_offset"| STR
+    ST -.->|"name"| STR
+    SY -.->|"name"| STR
+    SF -.->|"path"| STR
+    ST -.->|"data range"| BLOB
+    SY -.->|"section index"| ST
+    RE -.->|"symbol index"| SY
+    RE -.->|"section index"| ST
+    DB -.->|"file index"| SF
+
+    style H fill:#1e293b,stroke:#60a5fa,color:#e5e7eb
+    style STR fill:#2a2318,stroke:#e0af68,color:#f3e8d0
+    style BLOB fill:#14312a,stroke:#34d399,color:#d1fae5
+```
+
+Solid lines are file order; dotted lines are references. The CRC-32 in
+the header covers everything after the header, so any byte a reader
+trusts has already been checked once at the whole-file level and again
+individually. See §10.
+
 ## 3. Header (64 bytes)
 
 | Offset | Size | Field |

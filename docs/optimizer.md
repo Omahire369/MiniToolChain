@@ -34,6 +34,29 @@ minitool build program.asm -o program.mexe -O1 --stats
 
 ## 3. The passes
 
+They run in this order, and the whole set repeats until nothing changes.
+Passes feed each other — folding creates dead stores, deleting a jump
+exposes unreachable code — so a single sweep would leave work on the
+table:
+
+```mermaid
+flowchart TD
+    IN["IR for one section"] --> P1
+    P1["<b>1. unreachable code</b><br/>between a terminator and the next label"]
+    P2["<b>2. peephole</b><br/>PUSH/POP pairs, JMP to the next instruction"]
+    P3["<b>3. constant folding</b><br/>per basic block, only when FLAGS are dead"]
+    P4["<b>4. identity elimination</b><br/>MOV Rx, Rx and friends"]
+    P5["<b>5. dead stores</b><br/>overwritten before ever being read"]
+    P1 --> P2 --> P3 --> P4 --> P5 --> Q{"did anything<br/>change?"}
+    Q -->|yes, and under 8 iterations| P1
+    Q -->|no| OUT["IR at a fixed point"]
+
+    style OUT fill:#14312a,stroke:#34d399,color:#d1fae5
+```
+
+The iteration bound is a safety net rather than a real limit: every pass
+only deletes or simplifies, so the sequence converges on its own.
+
 ### Constant folding
 
 Tracks known register values within a basic block and evaluates
@@ -122,6 +145,39 @@ iterated to a fixed point so loops converge. A successor that cannot be
 determined — a `CALL`, a literal displacement, a branch to a label from
 another file — sets `unknown_successor` and forces the conservative
 answer.
+
+This is why the analysis has to cross block boundaries. In the program on
+the left, the `ADD` sets flags that nothing ever reads — but the block it
+lives in ends before overwriting them, so a within-block analysis has to
+assume they are live and the fold never fires:
+
+```mermaid
+flowchart TD
+    A["<b>block A</b><br/>MOVI R1, 2<br/>MOVI R2, 3<br/>ADD R1, R2 &nbsp;&nbsp; <i>writes FLAGS</i><br/>JMP done"]
+    B["<b>block B</b> &nbsp; at label 'done'<br/>MOVI R4, 7<br/>HALT"]
+    E(["exit &nbsp; live_in = false"])
+
+    A -->|"live_out(A) = live_in(B) = false,<br/>so the flags are dead and<br/>ADD folds to MOVI R1, 5"| B
+    B --> E
+
+    style A fill:#14312a,stroke:#34d399,color:#d1fae5
+```
+
+Change `HALT` to something whose successor is unknown and the answer
+flips, conservatively:
+
+```mermaid
+flowchart TD
+    A2["<b>block A</b><br/>ADD R1, R2 &nbsp;&nbsp; <i>writes FLAGS</i><br/>JMP done"]
+    B2["<b>block B</b> &nbsp; at label 'done'<br/>CALL somewhere_else"]
+    U(["unknown successor<br/>live_in = true"])
+
+    A2 -->|"live_out(A) = true,<br/>so ADD is left alone"| B2
+    B2 --> U
+
+    style A2 fill:#3f1d2b,stroke:#f87171,color:#fecaca
+    style U fill:#3f1d2b,stroke:#f87171,color:#fecaca
+```
 
 `Optimizer.FoldsWhenTheFlagsAreDeadAcrossBlocks` and
 `Optimizer.DoesNotFoldWhenTheFlagsAreLive` are the two halves of this.

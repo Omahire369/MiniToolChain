@@ -41,8 +41,23 @@ A line is:
 [label:]... [instruction | directive] [; comment]
 ```
 
-Every part is optional. Labels may share a line with the statement that
-follows them, and several may appear together:
+```mermaid
+flowchart LR
+    START(( )) --> L{"label?"}
+    L -->|"IDENT ':'"| L
+    L -->|none, or done| ST{"statement?"}
+    ST -->|"IDENT operands..."| C
+    ST -->|"'.' IDENT operands..."| C
+    ST -->|none| C
+    C{"comment?"} -->|"';' to end of line"| NL
+    C -->|none| NL((("newline")))
+
+    style START fill:#1e293b,stroke:#60a5fa,color:#e5e7eb
+```
+
+Every part is optional — a line may be nothing but a label, nothing but a
+comment, or entirely blank. Labels may share a line with the statement
+that follows them, and several may appear together:
 
 ```asm
 loop: retry: ADD R1, R2
@@ -215,6 +230,30 @@ memory      := '[' register [ ('+' | '-') INTEGER ] ']'
 expr        := INTEGER | CHAR | symbol [ ('+' | '-') INTEGER ]
 symbol      := IDENT | '.' IDENT
 ```
+
+The five operand shapes, and which instructions accept each:
+
+```mermaid
+flowchart TD
+    OP{"operand"}
+    OP --> R["<b>register</b><br/>R0..R15, FP, RV"]
+    OP --> I["<b>immediate</b><br/>42, 0x2A, 0b101, 0o52, 'A'<br/>optionally written #42"]
+    OP --> SY["<b>symbol</b><br/>name, .Llocal<br/>optionally name + 8"]
+    OP --> M["<b>memory</b><br/>[R2], [R2 + 8], [R2 - 8]"]
+    OP --> ST["<b>string</b><br/>&quot;text&quot; — directives only"]
+
+    R --> RU["every register format"]
+    I --> IU["MOVI, LEA, SYSCALL"]
+    SY --> SU["branches, MOVI, LEA<br/><i>becomes a relocation</i>"]
+    M --> MU["LOAD, STORE only"]
+    ST --> SU2[".asciz, .ascii"]
+
+    style SU fill:#2a2318,stroke:#e0af68,color:#f3e8d0
+```
+
+Note that the parser accepts any operand shape anywhere. Whether a given
+instruction *permits* it is a semantic question, decided in sema — see
+§12.
 
 ## 12. What the parser does not decide
 

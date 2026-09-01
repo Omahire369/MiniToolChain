@@ -6,65 +6,82 @@ Dependencies point strictly downwards. A lower layer never includes a
 header from a higher one, and nothing below `cli/` knows that a command
 line exists.
 
+```mermaid
+flowchart TD
+    subgraph L6["Driver"]
+        CLI["src/cli"]
+    end
+    subgraph L5["Orchestration"]
+        PIPE["assembler/pipeline"]
+        PLAY["playground/session"]
+    end
+    subgraph L4["Tools"]
+        ASM["assembler"]
+        LNK["linker"]
+        OPT["optimizer"]
+        VMM["vm"]
+        DBG["debugger"]
+        DIS["disassembler"]
+    end
+    subgraph L3["Representations"]
+        PAR["parser"]
+        AST["ast"]
+        IRR["ir"]
+        OBJ["object"]
+        EXE["executable"]
+    end
+    subgraph L2["Primitives"]
+        LEX["lexer"]
+        ISA["isa"]
+        BIN["binary utilities"]
+    end
+    subgraph L1["Foundation"]
+        COM["common"]
+        DIA["diagnostics"]
+    end
+
+    L6 --> L5 --> L4 --> L3 --> L2 --> L1
 ```
-CLI  (src/cli)
- |
- v
-Pipeline orchestration  (assembler/pipeline)
- |
- v
-Assembler / Linker / Optimizer / VM / Debugger / Disassembler
- |
- v
-Parser / AST / IR / Object / Executable
- |
- v
-Lexer / ISA / binary utilities
- |
- v
-Common / Diagnostics
-```
+
+Read an arrow as "may include headers from". There is no arrow upwards
+anywhere, which is what makes any layer usable without the ones above it:
+the tests link the same library the driver does, and the playground reuses
+the pipeline rather than reimplementing it.
 
 ## The pipeline
 
+```mermaid
+flowchart TD
+    SRC["source.asm"]
+    LEX["<b>lexer</b><br/>text to tokens, with source locations"]
+    PAR["<b>parser</b><br/>tokens to AST, syntax only"]
+    SEM["<b>sema</b><br/>AST checked against the ISA"]
+    LOW["<b>lowering</b><br/>AST to IR, sections and symbolic operands"]
+    OPT["<b>optimizer</b><br/>IR to IR, addressless so rewriting is safe"]
+    ASM["<b>assembler</b><br/>two passes: lay out, then encode"]
+    OBJ["main.mobj + util.mobj"]
+    LNK["<b>linker</b><br/>merge, resolve, relocate"]
+    EXE["program.mexe"]
+    LOAD["<b>loader</b>"]
+    CPU["<b>virtual CPU</b>"]
+    DIS["<b>disassembler</b>"]
+    DBG["<b>debugger</b>"]
+
+    SRC --> LEX --> PAR --> SEM --> LOW --> OPT --> ASM --> OBJ --> LNK --> EXE
+    EXE --> LOAD --> CPU
+    EXE --> DIS
+    DBG -. drives .-> CPU
+
+    style SRC fill:#1f2937,stroke:#60a5fa,color:#e5e7eb
+    style OBJ fill:#1f2937,stroke:#60a5fa,color:#e5e7eb
+    style EXE fill:#1f2937,stroke:#60a5fa,color:#e5e7eb
+    style DIS fill:#312e35,stroke:#c084fc,color:#e5e7eb
+    style DBG fill:#312e35,stroke:#c084fc,color:#e5e7eb
 ```
-   source.asm
-       |
-       v
-   [ lexer ]        text        -> tokens, with source locations
-       |
-       v
-   [ parser ]       tokens      -> AST          (syntax only)
-       |
-       v
-   [ sema ]         AST         -> AST          (validated against the ISA)
-       |
-       v
-   [ lowering ]     AST         -> IR           (sections, symbolic operands)
-       |
-       v
-   [ optimizer ]    IR          -> IR           (addressless: safe to rewrite)
-       |
-       v
-   [ assembler ]    IR          -> object       (two passes: layout, then encode)
-       |
-       v
-    main.mobj  +  util.mobj
-       |
-       v
-   [ linker ]       objects     -> executable   (merge, resolve, relocate)
-       |
-       v
-    program.mexe
-       |
-       +-------------------+
-       |                   |
-       v                   v
-   [ loader ]         [ disassembler ]
-       |
-       v
-   [ virtual CPU ] <---- [ debugger ]
-```
+
+Each arrow is a data structure you can inspect from the command line:
+`minitool objdump` for an object, `minitool verify` and
+`minitool disassemble` for an executable.
 
 ## Modules
 
@@ -107,6 +124,34 @@ be free to disagree:
   the optimizer's constant folder both call them. A folder that computes
   `2 + 2` differently from the machine is the classic way an optimizing
   toolchain goes quietly wrong.
+
+```mermaid
+flowchart TD
+    ENC["<b>isa::encode / isa::decode</b><br/><i>the one definition of the instruction format</i>"]
+    ASM["assembler<br/><i>emits words</i>"]
+    DIS["disassembler<br/><i>reads words back</i>"]
+    REL["relocation engine<br/><i>decode, patch, re-encode</i>"]
+    VM1["virtual CPU<br/><i>fetch and decode</i>"]
+    ASM --> ENC
+    DIS --> ENC
+    REL --> ENC
+    VM1 --> ENC
+
+    EVAL["<b>isa::evaluateBinary / evaluateUnary</b><br/><i>the one definition of what an opcode computes</i>"]
+    VM2["virtual CPU<br/><i>execute step</i>"]
+    FOLD["optimizer<br/><i>constant folder</i>"]
+    VM2 --> EVAL
+    FOLD --> EVAL
+
+    style ENC fill:#14312a,stroke:#34d399,color:#d1fae5
+    style EVAL fill:#14312a,stroke:#34d399,color:#d1fae5
+```
+
+The arrows all point *into* the shared definition. That is the whole
+point: there is nowhere for a second opinion to live. It is also why the
+playground refuses to compile assembly in JavaScript
+([ADR-012](adr/ADR-012-playground-architecture.md)) — that would add a
+third box with no arrow into either of these.
 
 ## Invariants
 

@@ -1,6 +1,6 @@
 # Testing strategy
 
-334 test cases across 28 binaries, with no third-party dependency
+358 test cases across 29 binaries, with no third-party dependency
 ([ADR-010](adr/ADR-010-test-framework.md)).
 
 ## Running everything
@@ -29,6 +29,27 @@ read `examples/` and `tests/fixtures/`.
 | Property | `tests/property/` | Algebraic laws hold over generated inputs. |
 | Fuzz | `tests/fuzz/` | Malformed input never crashes, hangs, or reads out of bounds. |
 | Failure | `tests/failure/` | Every documented failure mode produces the documented error. |
+
+Each layer catches a class of bug the ones below it structurally cannot.
+The arrows read "would not have caught this":
+
+```mermaid
+flowchart TD
+    U["<b>Unit</b> &nbsp; tests/unit<br/>each component, including its failure modes"]
+    I["<b>Integration</b> &nbsp; tests/integration<br/>source in, behaviour out, through the real pipeline"]
+    G["<b>Golden</b> &nbsp; tests/golden<br/>binary output is byte-for-byte stable"]
+    P["<b>Property</b> &nbsp; tests/property<br/>algebraic laws over generated inputs"]
+    F["<b>Fuzz</b> &nbsp; tests/fuzz<br/>malformed input never crashes, hangs or reads out of bounds"]
+    X["<b>Failure</b> &nbsp; tests/failure<br/>every documented failure mode gives the documented error"]
+
+    U -->|"components correct, wired up wrong"| I
+    I -->|"behaviour right, bytes drifted"| G
+    G -->|"the cases someone thought to write"| P
+    P -->|"well-formed inputs only"| F
+    F -->|"does not crash is not the same as says something useful"| X
+
+    style X fill:#14312a,stroke:#34d399,color:#d1fae5
+```
 
 ## What each layer is really for
 

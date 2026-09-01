@@ -16,16 +16,29 @@ $ minitool serve --host 0.0.0.0       # reachable from the network — read the 
 
 ## What it is made of
 
-```
-  browser                          minitool serve
-  ┌──────────────┐                 ┌────────────────────────────┐
-  │ editor       │  POST /api/run  │ http_server.cpp            │
-  │ output pane  │ ──────────────> │   parse request            │
-  │ disassembly  │                 │   route                    │
-  │ registers    │ <────────────── │ session.cpp                │
-  └──────────────┘   JSON report   │   assemble → link → run    │
-                                   │        (the real pipeline) │
-                                   └────────────────────────────┘
+```mermaid
+sequenceDiagram
+    autonumber
+    participant B as browser
+    participant H as http_server.cpp
+    participant S as session.cpp
+    participant T as the real toolchain
+
+    B->>H: POST /api/run?opt=1&stdin=...<br/>body is the assembly source
+    H->>H: parse the request line, route, decode the query
+    H->>S: RunRequest
+    S->>T: assembleSource
+    alt diagnostics
+        T-->>S: errors with carets, stage = assemble
+    else
+        S->>T: linker::link
+        S->>T: vm::run, output captured, budget enforced
+        T-->>S: output, registers, instruction count
+    end
+    S-->>H: RunReport
+    H->>H: encode as JSON<br/>64-bit values as strings, UTF-8 validated
+    H-->>B: 200 application/json
+    B->>B: render output, disassembly, registers
 ```
 
 Two endpoints, and that is the whole surface:
@@ -154,7 +167,7 @@ same grounds — the server can never emit a string the browser will refuse.
 
 ## Testing
 
-`tests/unit/test_playground.cpp`, 23 cases, split between the two layers.
+`tests/unit/test_playground.cpp`, 24 cases, split between the two layers.
 
 The session tests cover each stage a program can fail at (assembly error with
 a caret, link error, runtime trap, budget exhaustion), the limits, `stdin`

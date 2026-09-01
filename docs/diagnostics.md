@@ -106,6 +106,32 @@ examples/errors/invalid-operand.asm:12:14: error: LOAD expects a '[base + disp]'
 
 Three mistakes, three messages, one run.
 
+Recovery is what makes that possible. Each stage has a defined point at
+which it resynchronises and keeps going, rather than abandoning the file
+at the first problem:
+
+```mermaid
+flowchart TD
+    T["next token"] --> LOK{"lexes?"}
+    LOK -->|no| LE["report, skip one character<br/><i>always makes progress</i>"] --> T
+    LOK -->|yes| P{"fits the grammar?"}
+    P -->|no| PE["report, skip to end of line<br/><i>the line is the recovery point</i>"] --> T
+    P -->|yes| MORE{"more input?"}
+    MORE -->|yes| T
+    MORE -->|no| SEMA["<b>semantic analysis</b><br/>check every statement, collecting as it goes"]
+    SEMA --> ANY{"any errors<br/>at all?"}
+    ANY -->|yes| STOP(["report them all, stop before lowering"])
+    ANY -->|no| GO(["lower to IR"])
+
+    style STOP fill:#3f1d2b,stroke:#f87171,color:#fecaca
+    style GO fill:#14312a,stroke:#34d399,color:#d1fae5
+```
+
+The one thing recovery must never do is invent a fact. A statement that
+did not parse produces no AST node, so nothing downstream is asked to
+reason about a line that was never understood — which is how a cascade of
+nonsense follow-on errors is avoided.
+
 ## 5. Which stage reports what
 
 A diagnostic should come from the stage that knows enough to explain it,
@@ -124,9 +150,21 @@ and no earlier:
 | Is this image loadable? | executable validator |
 | What went wrong at run time? | VM |
 
+```mermaid
+flowchart LR
+    SRC["source"] --> L["<b>lexer</b><br/><i>is this a valid token?</i>"]
+    L --> P["<b>parser</b><br/><i>does this line fit<br/>the grammar?</i>"]
+    P --> S["<b>sema</b><br/><i>does this instruction exist<br/>with these operands?<br/>does this literal fit?<br/>is this label defined twice?</i>"]
+    S --> W["<b>lowering</b><br/><i>can this be<br/>represented in the IR?</i>"]
+    W --> K["<b>linker</b><br/><i>is this symbol defined<br/>anywhere? does this address<br/>fit its relocation field?</i>"]
+    K --> V["<b>validator</b><br/><i>is this image<br/>loadable?</i>"]
+    V --> R["<b>VM</b><br/><i>what went wrong<br/>at run time?</i>"]
+```
+
 This is why `HALT R1` is a semantic error and not a parse error: the
 parser does not know how many operands `HALT` takes, and should not
-(architectural rules 1 and 2).
+(architectural rules 1 and 2). Each stage asks only what it has the
+information to answer.
 
 ## 6. Runtime errors
 

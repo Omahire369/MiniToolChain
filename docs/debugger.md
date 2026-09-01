@@ -107,6 +107,37 @@ hardware watchpoint support, and is the honest thing to report.
 * `finish` runs until the stack is shallower than it is now, which is the
   current frame returning.
 
+```mermaid
+flowchart TD
+    C{"command"}
+    C -->|step| S1["execute exactly one instruction"]
+    C -->|next| N1{"is it a CALL?"}
+    N1 -->|no| S1
+    N1 -->|yes| N2["run until control returns to the<br/>instruction after it, <i>with the stack no<br/>deeper than it is now</i>"]
+    C -->|finish| F1["run until the stack is shallower<br/>than it is now"]
+    C -->|run / continue| R1["run freely"]
+
+    S1 --> CHK
+    N2 --> CHK
+    F1 --> CHK
+    R1 --> CHK
+
+    CHK{"why did we stop?"}
+    CHK -->|breakpoint hit| B(["report the breakpoint"])
+    CHK -->|watched value changed| W(["report old and new"])
+    CHK -->|program halted| H(["report the exit code"])
+    CHK -->|memory or arithmetic fault| E(["report the fault and the PC"])
+    CHK -->|budget exhausted| BD(["stopped, may not terminate"])
+
+    style E fill:#3f1d2b,stroke:#f87171,color:#fecaca
+    style BD fill:#3f1d2b,stroke:#f87171,color:#fecaca
+    style H fill:#14312a,stroke:#34d399,color:#d1fae5
+```
+
+The "stack no deeper" condition on `next` is what makes it work through
+recursion: a recursive call returns to the same address the outer call
+would, so an address check alone would stop at the first inner return.
+
 Both `next` and `finish` still honour breakpoints inside the callee, and
 both are bounded by the instruction budget, so neither can hang on a
 function that never returns.

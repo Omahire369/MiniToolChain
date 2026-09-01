@@ -115,6 +115,32 @@ helper:             ; at 0x00010018
 The assembler emits `CALL` with a zero immediate and a `PCREL48`
 relocation at offset 8 naming `helper`.
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as assembler
+    participant O as .mobj
+    participant L as linker
+    participant V as VM
+
+    A->>O: CALL word with immediate 0<br/>5700000000000000
+    A->>O: relocation PCREL48<br/>offset 8, symbol 'helper', addend 0
+    Note over O: the address is not knowable yet, so the field<br/>is left empty rather than guessed at
+
+    L->>O: read relocations
+    Note over L: helper resolves to S = 0x00010018<br/>the CALL sits at P = 0x00010008
+    L->>L: decode the word
+    L->>L: displacement = S + A - (P + 8) = 8<br/>via isa::branchDisplacement
+    L->>L: re-encode with the new immediate
+    L-->>V: 5700000000000008
+
+    V->>V: branchTarget(0x10008, 8)<br/>= 0x10008 + 8 + 8
+    Note over V: 0x00010018, which is helper
+```
+
+The linker and the VM both call into `isa`, which is the only reason the
+two arrows at the bottom agree. Neither does the arithmetic itself.
+
 At link time `S = 0x00010018`, `A = 0`, `P = 0x00010008`, so the
 displacement is `0x10018 - (0x10008 + 8) = 8`, and the word becomes
 `5700000000000008`.

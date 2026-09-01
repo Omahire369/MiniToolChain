@@ -10,29 +10,75 @@ minitool link main.mobj math.mobj data.mobj -o program.mexe
 
 ## 1. Stages
 
-```
-objects
-   |
-   v
-[1] merge sections      like-named sections are concatenated, aligned
-   |
-   v
-[2] resolve symbols     one global table; conflicts diagnosed here
-   |
-   v
-[3] apply relocations   every reference patched to a final address
-   |
-   v
-[4] build the image     segments, symbols, debug lines, entry point
-   |
-   v
-executable
+```mermaid
+flowchart TD
+    IN["main.mobj &nbsp; math.mobj &nbsp; data.mobj"]
+    S1["<b>1. merge sections</b><br/>like-named sections concatenated, each<br/>contribution aligned"]
+    S2["<b>2. resolve symbols</b><br/>one global table; duplicate and undefined<br/>symbols are diagnosed here"]
+    S3["<b>3. apply relocations</b><br/>every reference patched to a final address"]
+    S4["<b>4. build the image</b><br/>segments, symbols, debug lines, entry point"]
+    VAL{"image valid?<br/><i>no overlap, no W+X, entry in<br/>an executable segment</i>"}
+    OUT["program.mexe"]
+    ERR(["link error"])
+
+    IN --> S1 --> S2 --> S3 --> S4 --> VAL
+    VAL -->|yes| OUT
+    VAL -->|no| ERR
+
+    style OUT fill:#14312a,stroke:#34d399,color:#d1fae5
+    style ERR fill:#3f1d2b,stroke:#f87171,color:#fecaca
 ```
 
 Each stage completes for every object before the next begins. That
 ordering is what makes forward references across files work: stage 3 can
 resolve a call into an object that had not been placed when the calling
 object was read.
+
+Stages 1 and 2 together are what turns several independent files into one
+address space:
+
+```mermaid
+flowchart LR
+    subgraph O1["main.mobj"]
+        direction TB
+        T1[".text"]
+        D1[".data"]
+    end
+    subgraph O2["math.mobj"]
+        direction TB
+        T2[".text"]
+        D2[".data"]
+    end
+    subgraph O3["data.mobj"]
+        direction TB
+        R3[".rodata"]
+    end
+
+    subgraph IMG["program.mexe"]
+        direction TB
+        TT["<b>.text</b> segment &nbsp; r-x<br/>base 0x0001_0000"]
+        RR["<b>.rodata</b> segment &nbsp; r--<br/>base 0x0010_0000"]
+        DD["<b>.data</b> segment &nbsp; rw-<br/>base 0x0020_0000"]
+    end
+
+    T1 --> TT
+    T2 --> TT
+    R3 --> RR
+    D1 --> DD
+    D2 --> DD
+
+    style TT fill:#1e293b,stroke:#60a5fa,color:#e5e7eb
+    style RR fill:#2a2318,stroke:#e0af68,color:#f3e8d0
+    style DD fill:#14312a,stroke:#34d399,color:#d1fae5
+```
+
+Objects are merged in the order they were given, and each contribution
+starts on an 8-byte boundary — so two objects each contributing two bytes
+of `.data` produce a ten-byte segment, not a four-byte one. That padding
+is deliberate and asserted by
+`MultiFile.SectionsFromEveryObjectAreConcatenated`; a reader who assumes
+contributions are packed will compute the wrong address for the second
+one.
 
 ## 2. Stage 1 — merging sections
 

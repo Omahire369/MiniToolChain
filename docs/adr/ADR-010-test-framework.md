@@ -62,7 +62,7 @@ assertions — are replaced by plain loops over `allOpcodes()` and by
 `find() != npos`.
 
 CMake registers one `add_test` per binary rather than per case, so
-`ctest` reports 28 tests where GoogleTest discovery would report 334.
+`ctest` reports 29 tests where GoogleTest discovery would report 358.
 Each binary prints its own per-case results, and `--filter=` selects
 within one.
 

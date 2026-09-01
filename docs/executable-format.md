@@ -27,6 +27,35 @@ offset  contents
 ...     segment data blob                  to the end of the file
 ```
 
+An executable is the same container shape as an object, minus everything
+that only matters before linking: there are no relocations and no section
+indices, because every address has already been decided.
+
+```mermaid
+flowchart TD
+    H["<b>header</b> &nbsp; 64 bytes<br/>magic MEXE, version, entry point, counts, CRC-32"]
+    SG["<b>segment table</b><br/>segment_count x 40<br/>virtual address, sizes, permissions"]
+    SY["<b>symbol table</b><br/>symbol_count x 24<br/>absolute addresses"]
+    DB["<b>debug line table</b><br/>debug_count x 24"]
+    SF["<b>source file table</b><br/>source_count x 4"]
+    STR["<b>string table</b>"]
+    BLOB["<b>segment data blob</b>"]
+
+    H --- SG --- SY --- DB --- SF --- STR --- BLOB
+
+    H -.->|"entry_point lands in an executable segment"| SG
+    H -.->|"string_offset, blob_offset"| STR
+    SG -.->|"name"| STR
+    SY -.->|"name"| STR
+    SF -.->|"path"| STR
+    SG -.->|"file range"| BLOB
+    DB -.->|"file index"| SF
+
+    style H fill:#1e293b,stroke:#60a5fa,color:#e5e7eb
+    style STR fill:#2a2318,stroke:#e0af68,color:#f3e8d0
+    style BLOB fill:#14312a,stroke:#34d399,color:#d1fae5
+```
+
 ## 2. Header (64 bytes)
 
 | Offset | Size | Field |

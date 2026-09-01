@@ -72,6 +72,25 @@ fields are non-zero is rejected by the decoder. This makes the codec a
 bijection: every instruction has exactly one encoding, and every accepted
 word re-encodes to itself. Both directions are property-tested.
 
+```mermaid
+flowchart LR
+    I["<b>isa::Instruction</b><br/>opcode, dst, src, imm"]
+    W["<b>64-bit word</b>"]
+    R(["DecodeError"])
+
+    I -->|"encode"| W
+    W -->|"decode &nbsp; <i>reserved fields all zero</i>"| I
+    W -->|"decode &nbsp; <i>any reserved field set</i>"| R
+
+    style R fill:#3f1d2b,stroke:#f87171,color:#fecaca
+```
+
+Both round trips hold: `decode(encode(i)) == i` for every instruction,
+and `encode(decode(w)) == w` for every word that decodes at all. Had the
+decoder ignored reserved bits instead, the second would be false — many
+words would decode to the same instruction, and a corrupted file could
+execute as though it were intact.
+
 Immediate range: `[-2^47, 2^47 - 1]` signed, `[0, 2^48 - 1]` unsigned.
 A value outside the range is a `RELOCATION_OVERFLOW` or
 `INTEGER_OVERFLOW` error — it is never truncated.
@@ -83,7 +102,23 @@ target = address_of_branch + 8 + displacement
 ```
 
 The displacement is relative to the address of the instruction **after**
-the branch. A branch to itself has displacement `-8`. This is defined once,
+the branch.
+
+```mermaid
+flowchart TD
+    I0["<b>0x00010008</b> &nbsp; CALL helper<br/><i>the branch itself</i>"]
+    I1["<b>0x00010010</b> &nbsp; the following instruction<br/><i>this is what the displacement is measured from</i>"]
+    I2["<b>0x00010018</b> &nbsp; helper:<br/><i>the target</i>"]
+
+    I0 --- I1 --- I2
+    I1 -->|"displacement stored in the word = +8"| I2
+
+    style I1 fill:#2a2318,stroke:#e0af68,color:#f3e8d0
+    style I2 fill:#14312a,stroke:#34d399,color:#d1fae5
+```
+
+Getting this wrong is invisible for a branch to the very next instruction
+and wrong by exactly 8 everywhere else, which is why it is defined once. A branch to itself has displacement `-8`. This is defined once,
 in `isa::branchTarget` / `isa::branchDisplacement`, and all of the
 assembler, linker, disassembler and VM must use those functions.
 
