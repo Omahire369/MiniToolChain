@@ -107,7 +107,13 @@ try {
         New-Item -ItemType Directory -Force $testobj | Out-Null
         Invoke-Cl ("$flags /Fe$build\$name.exe /Fo$testobj\ /Itests " +
                    "$test tests/support/test_main.cpp $objs")
-        & "$build\$name.exe" 2>&1 | ForEach-Object {
+        # Merge stderr inside cmd rather than with a PowerShell 2>&1. Windows
+        # PowerShell 5.1 turns a native command's stderr into an ErrorRecord,
+        # which "Stop" treats as fatal and which prints whatever the filter
+        # below decides to drop -- so the same run would both fail and look
+        # different under `powershell` and `pwsh`. $LASTEXITCODE comes from
+        # cmd, which passes the test binary's own exit code straight through.
+        cmd /c "$build\$name.exe 2>&1" | ForEach-Object {
             if ($_ -match '^\[  FAILED|failure|uncaught') { Write-Host $_ -ForegroundColor Red }
             elseif ($_ -match '^\[==========\]') { Write-Host "    $_" }
         }

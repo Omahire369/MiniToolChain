@@ -107,7 +107,8 @@ pwsh tools/build.ps1 -Filter vm   # run one group
 
 This path exists because the project should be buildable on a machine with
 no CMake and no network access. It locates MSVC through `vswhere` and
-drives `cl` directly.
+drives `cl` directly. Either host works — `powershell` (5.1, preinstalled
+on Windows) and `pwsh` (7) produce the same output and the same exit code.
 
 ## The toolchain
 
