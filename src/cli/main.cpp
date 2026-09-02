@@ -31,7 +31,7 @@
 namespace {
 
 using minitool::u64;
-using minitool::io::println;
+using minitool::io::printLine;
 
 constexpr std::string_view kVersion = "1.0.0";
 
@@ -41,36 +41,36 @@ constexpr int kUsageError = 2;
 constexpr int kToolError = 1;
 
 int usage() {
-    println("minitool {} - a complete toolchain for the MiniToolchain 64-bit virtual ISA",
-            kVersion);
-    println();
-    println("usage: minitool <command> [options]");
-    println();
-    println("  build <src...> -o <exe>       assemble and link in one step");
-    println("  assemble <src> -o <obj>       assemble one source file");
-    println("  link <obj...> -o <exe>        link object files");
-    println("  run <exe>                     execute a program");
-    println("  disassemble <exe>             print the program as assembly");
-    println("  debug <exe>                   start the interactive debugger");
-    println("  objdump <obj>                 describe an object file");
-    println("  verify <exe>                  validate an executable image");
-    println("  isa                           print the instruction table");
-    println("  decode <hex-word>             decode one 64-bit instruction word");
-    println("  bench [iterations]            run the built-in benchmarks");
-    println("  serve                         open the playground UI in a browser");
-    println("  version                       print the version");
-    println();
-    println("options:");
-    println("  -o <path>        output file");
-    println("  -O0 | -O1        optimization level (default -O0)");
-    println("  -g | -gno        emit or omit debug line information (default -g)");
-    println("  --entry <name>   entry symbol for link/build (default _start)");
-    println("  --trace          print every instruction as it executes");
-    println("  --max-instructions <n>   stop a run after n instructions");
-    println("  --stats          report what the optimizer did");
-    println("  -x <command>     run a debugger command before going interactive");
-    println("  --port <n>       port for `serve` (default 8080)");
-    println("  --host <addr>    bind address for `serve` (default 127.0.0.1)");
+    printLine("minitool {} - a complete toolchain for the MiniToolchain 64-bit virtual ISA",
+              kVersion);
+    printLine();
+    printLine("usage: minitool <command> [options]");
+    printLine();
+    printLine("  build <src...> -o <exe>       assemble and link in one step");
+    printLine("  assemble <src> -o <obj>       assemble one source file");
+    printLine("  link <obj...> -o <exe>        link object files");
+    printLine("  run <exe>                     execute a program");
+    printLine("  disassemble <exe>             print the program as assembly");
+    printLine("  debug <exe>                   start the interactive debugger");
+    printLine("  objdump <obj>                 describe an object file");
+    printLine("  verify <exe>                  validate an executable image");
+    printLine("  isa                           print the instruction table");
+    printLine("  decode <hex-word>             decode one 64-bit instruction word");
+    printLine("  bench [iterations]            run the built-in benchmarks");
+    printLine("  serve                         open the playground UI in a browser");
+    printLine("  version                       print the version");
+    printLine();
+    printLine("options:");
+    printLine("  -o <path>        output file");
+    printLine("  -O0 | -O1        optimization level (default -O0)");
+    printLine("  -g | -gno        emit or omit debug line information (default -g)");
+    printLine("  --entry <name>   entry symbol for link/build (default _start)");
+    printLine("  --trace          print every instruction as it executes");
+    printLine("  --max-instructions <n>   stop a run after n instructions");
+    printLine("  --stats          report what the optimizer did");
+    printLine("  -x <command>     run a debugger command before going interactive");
+    printLine("  --port <n>       port for `serve` (default 8080)");
+    printLine("  --host <addr>    bind address for `serve` (default 127.0.0.1)");
     return kUsageError;
 }
 
@@ -159,7 +159,7 @@ std::optional<minitool::AssembleResult> assembleFile(const std::filesystem::path
     const std::expected<std::vector<minitool::u8>, std::string> bytes =
         minitool::object::readFileBytes(path);
     if (!bytes.has_value()) {
-        println(stderr, "error: {}", bytes.error());
+        printLine(stderr, "error: {}", bytes.error());
         return std::nullopt;
     }
     minitool::SourceManager sources;
@@ -179,18 +179,18 @@ std::optional<minitool::AssembleResult> assembleFile(const std::filesystem::path
         std::fputs(rendered.c_str(), stderr);
     }
     if (!result.has_value()) {
-        println(stderr, "error: {}: {}", path.string(), result.error());
+        printLine(stderr, "error: {}: {}", path.string(), result.error());
         return std::nullopt;
     }
     if (arguments.stats) {
-        println(stderr, "{}: {} {}", path.string(),
-                minitool::optimizer::optLevelName(arguments.opt_level), result->stats.summary());
+        printLine(stderr, "{}: {} {}", path.string(),
+                  minitool::optimizer::optLevelName(arguments.opt_level), result->stats.summary());
     }
     return std::move(*result);
 }
 
 int cmdIsa() {
-    println("{:<6} {:<9} {:<8} {}", "op", "mnemonic", "format", "notes");
+    printLine("{:<6} {:<9} {:<8} {}", "op", "mnemonic", "format", "notes");
     for (const minitool::isa::OpcodeInfo& info : minitool::isa::allOpcodes()) {
         std::string notes;
         if (info.writes_flags) {
@@ -202,12 +202,12 @@ int cmdIsa() {
         if (info.is_terminator) {
             notes += "terminator ";
         }
-        println("0x{:02X}   {:<9} {:<8} {}", static_cast<unsigned>(info.opcode), info.mnemonic,
-                minitool::isa::formatName(info.format), notes);
+        printLine("0x{:02X}   {:<9} {:<8} {}", static_cast<unsigned>(info.opcode), info.mnemonic,
+                  minitool::isa::formatName(info.format), notes);
     }
-    println();
-    println("{} instructions, {} bytes each, little-endian", minitool::isa::allOpcodes().size(),
-            minitool::isa::kInstructionSize);
+    printLine();
+    printLine("{} instructions, {} bytes each, little-endian", minitool::isa::allOpcodes().size(),
+              minitool::isa::kInstructionSize);
     return 0;
 }
 
@@ -220,22 +220,22 @@ int cmdDecode(std::string_view text) {
     const std::from_chars_result result =
         std::from_chars(digits.data(), digits.data() + digits.size(), word, 16);
     if (digits.empty() || result.ec != std::errc{} || result.ptr != digits.data() + digits.size()) {
-        println(stderr, "error: '{}' is not a 64-bit hexadecimal word", text);
+        printLine(stderr, "error: '{}' is not a 64-bit hexadecimal word", text);
         return kToolError;
     }
     const std::expected<minitool::isa::Instruction, minitool::isa::DecodeError> decoded =
         minitool::isa::decode(word);
     if (!decoded.has_value()) {
-        println(stderr, "error: {}", minitool::isa::decodeErrorName(decoded.error()));
+        printLine(stderr, "error: {}", minitool::isa::decodeErrorName(decoded.error()));
         return kToolError;
     }
-    println("{:016X}  {}", word, minitool::isa::toString(*decoded));
+    printLine("{:016X}  {}", word, minitool::isa::toString(*decoded));
     return 0;
 }
 
 int cmdAssemble(const Arguments& arguments) {
     if (arguments.inputs.size() != 1 || arguments.output.empty()) {
-        println(stderr, "usage: minitool assemble <source.asm> -o <output.mobj>");
+        printLine(stderr, "usage: minitool assemble <source.asm> -o <output.mobj>");
         return kUsageError;
     }
     const std::optional<minitool::AssembleResult> result =
@@ -246,10 +246,10 @@ int cmdAssemble(const Arguments& arguments) {
     const std::expected<void, std::string> written =
         minitool::object::writeObject(result->object, arguments.output);
     if (!written.has_value()) {
-        println(stderr, "error: {}", written.error());
+        printLine(stderr, "error: {}", written.error());
         return kToolError;
     }
-    println("assembled {} -> {}", arguments.inputs.front(), arguments.output);
+    printLine("assembled {} -> {}", arguments.inputs.front(), arguments.output);
     return 0;
 }
 
@@ -263,27 +263,27 @@ int linkObjects(std::span<const minitool::object::ObjectFile> objects, const Arg
     const std::expected<minitool::executable::Executable, std::string> executable =
         linker.link(objects, options);
     if (!executable.has_value()) {
-        println(stderr, "error: link failed: {}", executable.error());
+        printLine(stderr, "error: link failed: {}", executable.error());
         return kToolError;
     }
     const std::expected<void, std::string> written =
         minitool::executable::writeExecutable(*executable, arguments.output);
     if (!written.has_value()) {
-        println(stderr, "error: {}", written.error());
+        printLine(stderr, "error: {}", written.error());
         return kToolError;
     }
     u64 image = 0;
     for (const minitool::executable::Segment& segment : executable->segments) {
         image += segment.virtual_size;
     }
-    println("linked {} object(s) -> {} (entry 0x{:X}, {} bytes of image)", objects.size(),
-            arguments.output, executable->entry_point, image);
+    printLine("linked {} object(s) -> {} (entry 0x{:X}, {} bytes of image)", objects.size(),
+              arguments.output, executable->entry_point, image);
     return 0;
 }
 
 int cmdLink(const Arguments& arguments) {
     if (arguments.inputs.empty() || arguments.output.empty()) {
-        println(stderr, "usage: minitool link <file.mobj...> -o <program.mexe>");
+        printLine(stderr, "usage: minitool link <file.mobj...> -o <program.mexe>");
         return kUsageError;
     }
     std::vector<minitool::object::ObjectFile> objects;
@@ -291,7 +291,7 @@ int cmdLink(const Arguments& arguments) {
         std::expected<minitool::object::ObjectFile, std::string> object =
             minitool::object::readObject(input);
         if (!object.has_value()) {
-            println(stderr, "error: {}", object.error());
+            printLine(stderr, "error: {}", object.error());
             return kToolError;
         }
         objects.push_back(std::move(*object));
@@ -301,7 +301,7 @@ int cmdLink(const Arguments& arguments) {
 
 int cmdBuild(const Arguments& arguments) {
     if (arguments.inputs.empty() || arguments.output.empty()) {
-        println(stderr, "usage: minitool build <source.asm...> -o <program.mexe>");
+        printLine(stderr, "usage: minitool build <source.asm...> -o <program.mexe>");
         return kUsageError;
     }
     std::vector<minitool::object::ObjectFile> objects;
@@ -317,37 +317,38 @@ int cmdBuild(const Arguments& arguments) {
 
 int cmdRun(const Arguments& arguments) {
     if (arguments.inputs.size() != 1) {
-        println(stderr, "usage: minitool run <program.mexe> [--trace]");
+        printLine(stderr, "usage: minitool run <program.mexe> [--trace]");
         return kUsageError;
     }
     const std::expected<minitool::executable::Executable, std::string> executable =
         minitool::executable::readExecutable(arguments.inputs.front());
     if (!executable.has_value()) {
-        println(stderr, "error: {}", executable.error());
+        printLine(stderr, "error: {}", executable.error());
         return kToolError;
     }
 
     minitool::vm::VirtualMachine machine;
     if (arguments.trace) {
         machine.setTraceSink([](u64 pc, const minitool::isa::Instruction& instruction) {
-            println(stderr, "PC=0x{:016X}  {}", pc, minitool::isa::toString(instruction));
+            printLine(stderr, "PC=0x{:016X}  {}", pc, minitool::isa::toString(instruction));
         });
     }
     const std::expected<void, std::string> loaded = machine.load(*executable);
     if (!loaded.has_value()) {
-        println(stderr, "error: cannot load: {}", loaded.error());
+        printLine(stderr, "error: cannot load: {}", loaded.error());
         return kToolError;
     }
 
     const minitool::vm::RunResult result = machine.run(arguments.max_instructions);
     if (!result.ok()) {
-        println(stderr, "runtime error: {}", minitool::vm::vmErrorName(result.error));
-        println(stderr, "  {}", result.message);
-        println(stderr, "  PC = 0x{:016X}, after {} instructions", result.pc, result.instructions);
+        printLine(stderr, "runtime error: {}", minitool::vm::vmErrorName(result.error));
+        printLine(stderr, "  {}", result.message);
+        printLine(stderr, "  PC = 0x{:016X}, after {} instructions", result.pc,
+                  result.instructions);
         return kToolError;
     }
     if (arguments.stats) {
-        println(stderr, "{} instructions executed", result.instructions);
+        printLine(stderr, "{} instructions executed", result.instructions);
     }
     // A program's own exit code is what the driver returns, truncated to the
     // byte a shell can actually observe.
@@ -356,13 +357,13 @@ int cmdRun(const Arguments& arguments) {
 
 int cmdDisassemble(const Arguments& arguments) {
     if (arguments.inputs.size() != 1) {
-        println(stderr, "usage: minitool disassemble <program.mexe>");
+        printLine(stderr, "usage: minitool disassemble <program.mexe>");
         return kUsageError;
     }
     const std::expected<minitool::executable::Executable, std::string> executable =
         minitool::executable::readExecutable(arguments.inputs.front());
     if (!executable.has_value()) {
-        println(stderr, "error: {}", executable.error());
+        printLine(stderr, "error: {}", executable.error());
         return kToolError;
     }
     minitool::disassembler::Options options;
@@ -374,19 +375,19 @@ int cmdDisassemble(const Arguments& arguments) {
 
 int cmdDebug(const Arguments& arguments) {
     if (arguments.inputs.size() != 1) {
-        println(stderr, "usage: minitool debug <program.mexe>");
+        printLine(stderr, "usage: minitool debug <program.mexe>");
         return kUsageError;
     }
     const std::expected<minitool::executable::Executable, std::string> executable =
         minitool::executable::readExecutable(arguments.inputs.front());
     if (!executable.has_value()) {
-        println(stderr, "error: {}", executable.error());
+        printLine(stderr, "error: {}", executable.error());
         return kToolError;
     }
     minitool::vm::VirtualMachine machine;
     const std::expected<void, std::string> loaded = machine.load(*executable);
     if (!loaded.has_value()) {
-        println(stderr, "error: cannot load: {}", loaded.error());
+        printLine(stderr, "error: cannot load: {}", loaded.error());
         return kToolError;
     }
     minitool::debugger::Debugger debugger(machine, *executable);
@@ -401,26 +402,26 @@ int cmdDebug(const Arguments& arguments) {
 
 int cmdObjdump(const Arguments& arguments) {
     if (arguments.inputs.size() != 1) {
-        println(stderr, "usage: minitool objdump <file.mobj>");
+        printLine(stderr, "usage: minitool objdump <file.mobj>");
         return kUsageError;
     }
     const std::expected<minitool::object::ObjectFile, std::string> object =
         minitool::object::readObject(arguments.inputs.front());
     if (!object.has_value()) {
-        println(stderr, "error: {}", object.error());
+        printLine(stderr, "error: {}", object.error());
         return kToolError;
     }
 
-    println("{}: MiniToolchain object, version {}", arguments.inputs.front(), object->version);
-    println();
-    println("sections:");
+    printLine("{}: MiniToolchain object, version {}", arguments.inputs.front(), object->version);
+    printLine();
+    printLine("sections:");
     for (const minitool::object::Section& section : object->sections) {
-        println("  [{}] {:<10} {:<7} size {:<8} align {:<4} {} bytes of data", section.index,
-                section.name, minitool::object::sectionTypeName(section.type), section.size,
-                section.alignment, section.data.size());
+        printLine("  [{}] {:<10} {:<7} size {:<8} align {:<4} {} bytes of data", section.index,
+                  section.name, minitool::object::sectionTypeName(section.type), section.size,
+                  section.alignment, section.data.size());
     }
-    println();
-    println("symbols:");
+    printLine();
+    printLine("symbols:");
     for (minitool::u32 i = 0; i < object->symbols.size(); ++i) {
         const minitool::Symbol& symbol = object->symbols.at(i);
         const char* binding = "local";
@@ -438,23 +439,23 @@ int cmdObjdump(const Arguments& arguments) {
                 break;
         }
         if (symbol.defined) {
-            println("  [{}] {:<20} {:<7} section {} + 0x{:X}", i, symbol.name, binding,
-                    symbol.section, symbol.value);
+            printLine("  [{}] {:<20} {:<7} section {} + 0x{:X}", i, symbol.name, binding,
+                      symbol.section, symbol.value);
         } else {
-            println("  [{}] {:<20} {:<7} undefined", i, symbol.name, binding);
+            printLine("  [{}] {:<20} {:<7} undefined", i, symbol.name, binding);
         }
     }
-    println();
-    println("relocations:");
+    printLine();
+    printLine("relocations:");
     for (const minitool::object::Relocation& relocation : object->relocations) {
-        println("  {:<8} section {} + 0x{:<6X} -> {} {:+}",
-                minitool::object::relocationTypeName(relocation.type), relocation.section,
-                relocation.offset, object->symbols.at(relocation.symbol).name, relocation.addend);
+        printLine("  {:<8} section {} + 0x{:<6X} -> {} {:+}",
+                  minitool::object::relocationTypeName(relocation.type), relocation.section,
+                  relocation.offset, object->symbols.at(relocation.symbol).name, relocation.addend);
     }
     if (!object->debug_info.empty()) {
-        println();
-        println("debug line table: {} entries over {} file(s)", object->debug_info.size(),
-                object->source_files.size());
+        printLine();
+        printLine("debug line table: {} entries over {} file(s)", object->debug_info.size(),
+                  object->source_files.size());
     }
 
     // Disassemble the text section: an object dump that cannot show you the
@@ -463,9 +464,9 @@ int cmdObjdump(const Arguments& arguments) {
         if (section.type != minitool::object::SectionType::Text || section.data.empty()) {
             continue;
         }
-        println();
-        println("disassembly of {} (offsets, not addresses -- this file is not linked yet):",
-                section.name);
+        printLine();
+        printLine("disassembly of {} (offsets, not addresses -- this file is not linked yet):",
+                  section.name);
         const minitool::disassembler::Disassembler disassembler;
         std::fputs(disassembler.disassemble(section.data, 0).c_str(), stdout);
     }
@@ -474,7 +475,7 @@ int cmdObjdump(const Arguments& arguments) {
 
 int cmdVerify(const Arguments& arguments) {
     if (arguments.inputs.size() != 1) {
-        println(stderr, "usage: minitool verify <program.mexe>");
+        printLine(stderr, "usage: minitool verify <program.mexe>");
         return kUsageError;
     }
     // readExecutable already validates structure, checksum and image; a
@@ -482,19 +483,19 @@ int cmdVerify(const Arguments& arguments) {
     const std::expected<minitool::executable::Executable, std::string> executable =
         minitool::executable::readExecutable(arguments.inputs.front());
     if (!executable.has_value()) {
-        println(stderr, "invalid: {}", executable.error());
+        printLine(stderr, "invalid: {}", executable.error());
         return kToolError;
     }
-    println("{}: valid MiniToolchain executable", arguments.inputs.front());
-    println("  entry point : 0x{:016X}", executable->entry_point);
-    println("  segments    : {}", executable->segments.size());
+    printLine("{}: valid MiniToolchain executable", arguments.inputs.front());
+    printLine("  entry point : 0x{:016X}", executable->entry_point);
+    printLine("  segments    : {}", executable->segments.size());
     for (const minitool::executable::Segment& segment : executable->segments) {
-        println("    {:<8} 0x{:016X} .. 0x{:016X}  {}  {} bytes on disk", segment.name,
-                segment.virtual_address, segment.virtual_address + segment.virtual_size,
-                minitool::executable::flagsToString(segment.flags), segment.data.size());
+        printLine("    {:<8} 0x{:016X} .. 0x{:016X}  {}  {} bytes on disk", segment.name,
+                  segment.virtual_address, segment.virtual_address + segment.virtual_size,
+                  minitool::executable::flagsToString(segment.flags), segment.data.size());
     }
-    println("  symbols     : {}", executable->symbols.size());
-    println("  debug lines : {}", executable->debug_info.size());
+    printLine("  symbols     : {}", executable->symbols.size());
+    printLine("  debug lines : {}", executable->debug_info.size());
     return 0;
 }
 
@@ -503,7 +504,7 @@ int cmdVerify(const Arguments& arguments) {
 int cmdBench(const Arguments& arguments) {
     u64 iterations = 200;
     if (!arguments.inputs.empty() && !parseU64(arguments.inputs.front(), iterations)) {
-        println(stderr, "usage: minitool bench [iterations]");
+        printLine(stderr, "usage: minitool bench [iterations]");
         return kUsageError;
     }
 
@@ -523,16 +524,16 @@ int cmdBench(const Arguments& arguments) {
         const std::expected<minitool::AssembleResult, std::string> result =
             minitool::assembleSource(sources, file, diagnostics);
         if (!result.has_value()) {
-            println(stderr, "error: benchmark source failed to assemble");
+            printLine(stderr, "error: benchmark source failed to assemble");
             return kToolError;
         }
         instructions += result->stats.instructions_before;
     }
     const auto elapsed = Clock::now() - start;
     const double seconds = std::chrono::duration<double>(elapsed).count();
-    println("assembled {} instructions in {:.3f} s ({:.0f} instructions/s)", instructions, seconds,
-            seconds > 0 ? static_cast<double>(instructions) / seconds : 0.0);
-    println("(see benchmarks/ for the full suite)");
+    printLine("assembled {} instructions in {:.3f} s ({:.0f} instructions/s)", instructions,
+              seconds, seconds > 0 ? static_cast<double>(instructions) / seconds : 0.0);
+    printLine("(see benchmarks/ for the full suite)");
     return 0;
 }
 
@@ -546,12 +547,12 @@ int main(int argc, char** argv) {
     const std::string_view command = args[0];
     const Arguments arguments = parseArguments(std::span{args}.subspan(1));
     if (!arguments.error.empty()) {
-        println(stderr, "error: {}", arguments.error);
+        printLine(stderr, "error: {}", arguments.error);
         return kUsageError;
     }
 
     if (command == "version") {
-        println("{}", kVersion);
+        printLine("{}", kVersion);
         return 0;
     }
     if (command == "isa") {
@@ -600,6 +601,6 @@ int main(int argc, char** argv) {
         static_cast<void>(usage());
         return 0;
     }
-    println(stderr, "error: unknown command '{}'", command);
+    printLine(stderr, "error: unknown command '{}'", command);
     return usage();
 }

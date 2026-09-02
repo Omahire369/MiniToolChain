@@ -101,16 +101,39 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      # Pinned to clang-tidy-18 for the same reason clang-format is pinned
+      # above: an unversioned `clang-tidy` tracks whatever noble's default
+      # alternative resolves to, which can change under an unrelated image
+      # upgrade. libc++-18-dev is not for linking -- clang-tidy only parses
+      # and analyses -- it exists to work around a real libstdc++/Clang
+      # mismatch (see --extra-arg below).
       - name: Install toolchain
-        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build clang-tidy g++-13
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build clang-tidy-18 libc++-18-dev libc++abi-18-dev g++-13
       - name: Configure
         run: cmake --preset debug
         env:
           CXX: g++-13
       - name: Run clang-tidy
         run: |
-          find include src -name '*.hpp' -o -name '*.cpp' -print0 \
-            | xargs -0 clang-tidy -p build/debug
+          # `-name A -o -name B` with no parentheses is `(-name A) -o (-name
+          # B -print0)`: -print0 binds only to the second clause, so the two
+          # branches are printed with different terminators and every .hpp
+          # is silently dropped once piped through `xargs -0`. This is the
+          # same mistake the `format` job avoids just above -- parenthesise
+          # the -o expression so -print0 applies to the whole match.
+          #
+          # --extra-arg=-stdlib=libc++: at -std=c++23, Clang 18 reports
+          # __cpp_concepts as 201907L where GCC reports 202002L (a real,
+          # long-standing feature-test-macro mismatch between the two
+          # compilers, unrelated to this project). libstdc++'s <expected>
+          # gates its content on __cpp_concepts >= 202002L, so Clang sees an
+          # empty header and every std::expected use in this codebase fails
+          # to parse. Pointing clang-tidy at libc++ instead sidesteps the
+          # mismatch entirely, since libc++ has no such guard.
+          find include src \( -name '*.hpp' -o -name '*.cpp' \) -print0 \
+            | xargs -0 clang-tidy-18 -p build/debug --extra-arg=-stdlib=libc++
 
   # The golden fixtures must match what this build produces. If they do not,
   # either a format changed or something changed it by accident — and the

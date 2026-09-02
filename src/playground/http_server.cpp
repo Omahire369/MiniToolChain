@@ -364,8 +364,7 @@ bool readRequest(Socket socket, std::string& request) {
         if (request.size() > kMaxRequestBytes) {
             return false;
         }
-        const auto received =
-            recv(socket, buffer.data(), static_cast<SendSize>(buffer.size()), 0);
+        const auto received = recv(socket, buffer.data(), static_cast<SendSize>(buffer.size()), 0);
         if (received <= 0) {
             return false;
         }
@@ -452,7 +451,7 @@ int serve(const ServeOptions& options) {
     // long as the previous socket sits in TIME_WAIT.
     const int reuse = 1;
     setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&reuse),
-                 sizeof(reuse));
+               sizeof(reuse));
 
     sockaddr_in address{};
     address.sin_family = AF_INET;
