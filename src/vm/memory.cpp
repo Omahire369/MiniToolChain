@@ -84,9 +84,18 @@ const VirtualMemory::Region* VirtualMemory::regionAt(u64 address) const noexcept
 
 MemoryResult<const VirtualMemory::Region*> VirtualMemory::checkAccess(u64 address, u64 size,
                                                                       Permission needed) const {
-    if (size == 0) {
-        return nullptr;
-    }
+    // Precondition: size > 0. Every caller either passes a nonzero constant
+    // (1 or sizeof(u64)) or has already short-circuited an empty access
+    // before reaching here (readBytes, writeBytes). That makes the pointer
+    // this function returns on success unconditionally non-null, provable
+    // from this function's own body alone: regionAt's null check is the only
+    // early return, and `region` is never reassigned after it. A `size == 0`
+    // special case used to return a null pointer on success instead, which
+    // meant every caller's safety depended on the optimizer tracing constant
+    // arguments back through this call to rule that branch out -- GCC 14
+    // managed to, GCC 13 did not, and the difference showed up as a
+    // -Wnull-dereference false positive in writeByte/writeU64/writeBytes
+    // that was toolchain-version-dependent (2026-09-02).
     const Region* region = regionAt(address);
     if (region == nullptr) {
         return std::unexpected(MemoryFault{MemoryErrorKind::Unmapped, address, size});

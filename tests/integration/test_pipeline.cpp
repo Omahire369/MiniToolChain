@@ -30,7 +30,13 @@ std::optional<std::string> readExample(std::string_view name) {
     if (!file) {
         return std::nullopt;
     }
-    return std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+    // Not the istreambuf_iterator range-construction idiom: GCC 13's
+    // -Wnull-dereference misfires on it at -O3, entirely inside <streambuf>
+    // and <bits/basic_string.tcc> -- nothing this file could fix locally,
+    // since none of the flagged code is ours (2026-09-02).
+    std::ostringstream contents;
+    contents << file.rdbuf();
+    return contents.str();
 }
 
 TEST(Pipeline, TheAcceptanceProgramFromThePlan) {
@@ -258,8 +264,9 @@ TEST(Pipeline, ErrorExamplesAllFailWithDiagnostics) {
             continue;
         }
         std::ifstream file(entry.path(), std::ios::binary);
-        const std::string source((std::istreambuf_iterator<char>(file)),
-                                 std::istreambuf_iterator<char>());
+        std::ostringstream contents;
+        contents << file.rdbuf();
+        const std::string source = contents.str();
         const testkit::Assembled assembled = testkit::assemble(source);
         const bool rejected = !assembled.ok || !testkit::build(source).ok;
         EXPECT_TRUE(rejected) << entry.path().string() << " was expected to fail";
