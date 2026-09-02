@@ -108,7 +108,6 @@ class VirtualMemory {
     void reset();
 
   private:
-    [[nodiscard]] Region* findRegion(u64 address) noexcept;
     /// Validates an access of `size` bytes at `address` against `needed`.
     [[nodiscard]] MemoryResult<const Region*> checkAccess(u64 address, u64 size,
                                                           Permission needed) const;

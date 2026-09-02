@@ -66,6 +66,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install toolchain
         run: sudo apt-get update && sudo apt-get install -y cmake ninja-build g++-13
+      # `unshare -r` creates a new user namespace to get root inside it, which
+      # is what lets an unprivileged runner also unshare the network namespace
+      # (-n). Ubuntu 24.04 blocks that via AppArmor by default (see `man
+      # unshare`'s AppArmor notes) -- the runner has passwordless sudo, so
+      # relaxing it for this job is simpler than emulating the restriction.
+      - name: Allow unprivileged user namespaces
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Configure and build with networking disabled
         run: |
           cmake --preset debug

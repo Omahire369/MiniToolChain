@@ -82,15 +82,6 @@ const VirtualMemory::Region* VirtualMemory::regionAt(u64 address) const noexcept
     return nullptr;
 }
 
-VirtualMemory::Region* VirtualMemory::findRegion(u64 address) noexcept {
-    for (Region& region : regions_) {
-        if (address >= region.base && address - region.base < region.size) {
-            return &region;
-        }
-    }
-    return nullptr;
-}
-
 MemoryResult<const VirtualMemory::Region*> VirtualMemory::checkAccess(u64 address, u64 size,
                                                                       Permission needed) const {
     if (size == 0) {
@@ -147,7 +138,11 @@ MemoryResult<void> VirtualMemory::writeByte(u64 address, u8 value) {
     if (!checked.has_value()) {
         return std::unexpected(checked.error());
     }
-    Region* region = findRegion(address);
+    // Reuse the region checkAccess already located rather than searching again:
+    // a second, independent lookup gives the optimizer no way to see that it
+    // cannot fail, which is what produced a false-positive null-dereference
+    // warning under GCC 14 at -O3 (2026-09-02).
+    Region* region = const_cast<Region*>(*checked);
     region->data[static_cast<std::size_t>(address - region->base)] = value;
     return {};
 }
@@ -158,7 +153,7 @@ MemoryResult<void> VirtualMemory::writeU64(u64 address, u64 value) {
     if (!checked.has_value()) {
         return std::unexpected(checked.error());
     }
-    Region* region = findRegion(address);
+    Region* region = const_cast<Region*>(*checked);
     const std::size_t offset = static_cast<std::size_t>(address - region->base);
     byteorder::store<u64>(std::span<u8>{region->data}.subspan(offset, sizeof(u64)), value);
     return {};
@@ -187,7 +182,7 @@ MemoryResult<void> VirtualMemory::writeBytes(u64 address, std::span<const u8> da
     if (!checked.has_value()) {
         return std::unexpected(checked.error());
     }
-    Region* region = findRegion(address);
+    Region* region = const_cast<Region*>(*checked);
     const std::size_t offset = static_cast<std::size_t>(address - region->base);
     std::copy(data.begin(), data.end(), region->data.begin() + static_cast<std::ptrdiff_t>(offset));
     return {};

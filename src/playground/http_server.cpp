@@ -24,9 +24,15 @@
 #endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#if defined(_MSC_VER)
 // Keep the socket library dependency with the one file that needs it, so
-// every target linking this object picks it up automatically.
+// every target linking this object picks it up automatically -- this is
+// what tools/build.ps1 relies on. MSVC-only: `#pragma comment` is not a
+// standard pragma, and MinGW GCC treats an unrecognized one as an error
+// under -Werror. MinGW gets the same dependency from CMake's
+// `target_link_libraries(... ws2_32)` instead (src/CMakeLists.txt).
 #pragma comment(lib, "ws2_32.lib")
+#endif
 #else
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -43,14 +49,14 @@ namespace {
 using Socket = SOCKET;
 constexpr Socket kInvalidSocket = INVALID_SOCKET;
 void closeSocket(Socket socket) {
-    ::closesocket(socket);
+    closesocket(socket);
 }
 using SendSize = int;
 #else
 using Socket = int;
 constexpr Socket kInvalidSocket = -1;
 void closeSocket(Socket socket) {
-    ::close(socket);
+    close(socket);
 }
 using SendSize = std::size_t;
 #endif
@@ -359,7 +365,7 @@ bool readRequest(Socket socket, std::string& request) {
             return false;
         }
         const auto received =
-            ::recv(socket, buffer.data(), static_cast<SendSize>(buffer.size()), 0);
+            recv(socket, buffer.data(), static_cast<SendSize>(buffer.size()), 0);
         if (received <= 0) {
             return false;
         }
@@ -371,7 +377,7 @@ void sendAll(Socket socket, std::string_view data) {
     std::size_t sent = 0;
     while (sent < data.size()) {
         const auto written =
-            ::send(socket, data.data() + sent, static_cast<SendSize>(data.size() - sent), 0);
+            send(socket, data.data() + sent, static_cast<SendSize>(data.size() - sent), 0);
         if (written <= 0) {
             return;
         }
@@ -436,7 +442,7 @@ int serve(const ServeOptions& options) {
     }
 #endif
 
-    const Socket listener = ::socket(AF_INET, SOCK_STREAM, 0);
+    const Socket listener = socket(AF_INET, SOCK_STREAM, 0);
     if (listener == kInvalidSocket) {
         std::fputs("error: could not create a socket\n", stderr);
         return 1;
@@ -445,25 +451,25 @@ int serve(const ServeOptions& options) {
     // Without SO_REUSEADDR, restarting the server after a request fails for as
     // long as the previous socket sits in TIME_WAIT.
     const int reuse = 1;
-    ::setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&reuse),
+    setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&reuse),
                  sizeof(reuse));
 
     sockaddr_in address{};
     address.sin_family = AF_INET;
-    address.sin_port = ::htons(options.port);
-    if (::inet_pton(AF_INET, options.host.c_str(), &address.sin_addr) != 1) {
+    address.sin_port = htons(options.port);
+    if (inet_pton(AF_INET, options.host.c_str(), &address.sin_addr) != 1) {
         std::fprintf(stderr, "error: '%s' is not an IPv4 address\n", options.host.c_str());
         closeSocket(listener);
         return 1;
     }
 
-    if (::bind(listener, reinterpret_cast<const sockaddr*>(&address), sizeof(address)) != 0) {
+    if (bind(listener, reinterpret_cast<const sockaddr*>(&address), sizeof(address)) != 0) {
         std::fprintf(stderr, "error: could not bind %s:%u (is it already in use?)\n",
                      options.host.c_str(), static_cast<unsigned>(options.port));
         closeSocket(listener);
         return 1;
     }
-    if (::listen(listener, 16) != 0) {
+    if (listen(listener, 16) != 0) {
         std::fputs("error: could not listen on the socket\n", stderr);
         closeSocket(listener);
         return 1;
@@ -477,7 +483,7 @@ int serve(const ServeOptions& options) {
     // requests sequentially means there is no shared state to get wrong, and a
     // run that hits the instruction budget delays only the next request.
     while (true) {
-        const Socket client = ::accept(listener, nullptr, nullptr);
+        const Socket client = accept(listener, nullptr, nullptr);
         if (client == kInvalidSocket) {
             continue;
         }
